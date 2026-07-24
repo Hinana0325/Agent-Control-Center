@@ -179,6 +179,8 @@
     <ID>LongMethod:ActivityScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ActivityScreen( activityViewModel: ActivityViewModel = hiltViewModel() )</ID>
     <ID>LongMethod:AgentMarketScreen.kt$@Composable private fun MarketplaceAgentCard( agent: MarketplaceAgent, isInstalled: Boolean, isFavorite: Boolean, onInstall: () -&gt; Unit, onToggleFavorite: () -&gt; Unit )</ID>
     <ID>LongMethod:AgentMarketScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun AgentMarketScreen( onInstall: (MarketplaceAgent) -&gt; Unit, onBack: () -&gt; Unit )</ID>
+    <ID>LongMethod:SessionsScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable private fun SwipeableSessionItem( session: SessionEntity, isSelected: Boolean, onSelect: () -&gt; Unit, onDelete: () -&gt; Unit, onTogglePin: () -&gt; Unit, compact: Boolean )</ID>
+    <ID>LongMethod:WorkflowEngine.kt$WorkflowEngine$suspend fun execute( workflow: Workflow, input: String ): String</ID>
     <ID>LongMethod:AgentsScreen.kt$@OptIn(ExperimentalFoundationApi::class) @Composable private fun AgentCard( agent: AgentConfig, onEdit: () -&gt; Unit, onDelete: () -&gt; Unit )</ID>
     <ID>LongMethod:AgentsScreen.kt$@OptIn(ExperimentalFoundationApi::class) @Composable private fun AgentGridCard( agent: AgentConfig, onEdit: () -&gt; Unit, onDelete: () -&gt; Unit )</ID>
     <ID>LongMethod:AgentsScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun AgentsScreen( agentsViewModel: AgentsViewModel = hiltViewModel() )</ID>
@@ -244,6 +246,9 @@
     <ID>MaxLineLength:AgentsScreen.kt$leadingIcon = { Icon(Icons.Filled.PersonAdd, contentDescription = null, modifier = Modifier.size(20.dp)) }</ID>
     <ID>MaxLineLength:AgentsScreen.kt$title = { Text(if (agent.serverUrl.isBlank()) stringResource(R.string.new_agent) else stringResource(R.string.btn_edit) + " " + agent.name) }</ID>
     <ID>MaxLineLength:AppDatabase.kt$AppDatabase.Companion.&lt;no name provided&gt;$db.execSQL("CREATE INDEX IF NOT EXISTS index_messages_sessionId_timestamp ON messages (sessionId, timestamp)")</ID>
+    <ID>MaxLineLength:AppDatabase.kt$AppDatabase.Companion.&lt;no name provided&gt;$db.execSQL("CREATE INDEX IF NOT EXISTS index_marketplace_favorites_addedAt ON marketplace_favorites (addedAt)")</ID>
+    <ID>MaxLineLength:AppDatabase.kt$AppDatabase.Companion.&lt;no name provided&gt;$db.execSQL("CREATE INDEX IF NOT EXISTS index_workflow_runs_startedAt ON workflow_runs (startedAt)")</ID>
+    <ID>MaxLineLength:WorkflowRunDao.kt$WorkflowRunDao$@Query("UPDATE workflow_runs SET status = :status, completedAt = :completedAt, output = :output, error = :error, logsJson = :logsJson, failedNodeIdsJson = :failedNodeIdsJson WHERE id = :id")</ID>
     <ID>MaxLineLength:AppNavigation.kt$icon = { Icon(imageVector = screen.icon, contentDescription = stringResource(screen.stringResId)) }</ID>
     <ID>MaxLineLength:AppNavigation.kt$label = { Text(text = stringResource(screen.stringResId), style = MaterialTheme.typography.labelSmall) }</ID>
     <ID>MaxLineLength:ChatInputBar.kt$leadingIcon = { Icon(Icons.Default.AttachFile, contentDescription = null, modifier = Modifier.size(20.dp)) }</ID>

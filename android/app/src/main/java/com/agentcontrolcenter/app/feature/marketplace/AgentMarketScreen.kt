@@ -38,6 +38,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @dagger.hilt.EntryPoint
+@dagger.hilt.InstallIn(dagger.hilt.components.SingletonComponent::class)
 @kotlin.Suppress("unused")
 interface MarketplaceFavoriteEntryPoint {
     fun favoriteRepository(): MarketplaceFavoriteRepository
