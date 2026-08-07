@@ -49,7 +49,8 @@ class WorkflowRunDaoTest {
             input = "Hello",
             startedAt = 1000L,
             completedAt = null,
-            status = "RUNNING"
+            status = "RUNNING",
+            error = null
         )
         dao.insert(run)
 
@@ -69,7 +70,8 @@ class WorkflowRunDaoTest {
             input = "Hello",
             startedAt = 1000L,
             completedAt = null,
-            status = "RUNNING"
+            status = "RUNNING",
+            error = null
         )
         dao.insert(run)
 
@@ -98,7 +100,8 @@ class WorkflowRunDaoTest {
             input = "Hello",
             startedAt = 1000L,
             completedAt = null,
-            status = "RUNNING"
+            status = "RUNNING",
+            error = null
         )
         dao.insert(run)
 
@@ -122,13 +125,15 @@ class WorkflowRunDaoTest {
         dao.insert(
             WorkflowRunEntity(
                 id = "old", workflowId = "wf", workflowName = "Old",
-                input = "", startedAt = 1000L, completedAt = 1100L, status = "COMPLETED"
+                input = "", startedAt = 1000L, completedAt = 1100L, status = "COMPLETED",
+                error = null
             )
         )
         dao.insert(
             WorkflowRunEntity(
                 id = "new", workflowId = "wf", workflowName = "New",
-                input = "", startedAt = 2000L, completedAt = 2100L, status = "COMPLETED"
+                input = "", startedAt = 2000L, completedAt = 2100L, status = "COMPLETED",
+                error = null
             )
         )
 
@@ -144,13 +149,15 @@ class WorkflowRunDaoTest {
         dao.insert(
             WorkflowRunEntity(
                 id = "r1", workflowId = "wf-a", workflowName = "A",
-                input = "", startedAt = 1000L, completedAt = 1100L, status = "COMPLETED"
+                input = "", startedAt = 1000L, completedAt = 1100L, status = "COMPLETED",
+                error = null
             )
         )
         dao.insert(
             WorkflowRunEntity(
                 id = "r2", workflowId = "wf-b", workflowName = "B",
-                input = "", startedAt = 2000L, completedAt = 2100L, status = "COMPLETED"
+                input = "", startedAt = 2000L, completedAt = 2100L, status = "COMPLETED",
+                error = null
             )
         )
 
@@ -168,13 +175,15 @@ class WorkflowRunDaoTest {
         dao.insert(
             WorkflowRunEntity(
                 id = "old", workflowId = "wf", workflowName = "Old",
-                input = "", startedAt = 1000L, completedAt = 1100L, status = "COMPLETED"
+                input = "", startedAt = 1000L, completedAt = 1100L, status = "COMPLETED",
+                error = null
             )
         )
         dao.insert(
             WorkflowRunEntity(
                 id = "new", workflowId = "wf", workflowName = "New",
-                input = "", startedAt = 5000L, completedAt = 5100L, status = "COMPLETED"
+                input = "", startedAt = 5000L, completedAt = 5100L, status = "COMPLETED",
+                error = null
             )
         )
 
@@ -192,13 +201,15 @@ class WorkflowRunDaoTest {
         dao.insert(
             WorkflowRunEntity(
                 id = "r1", workflowId = "wf", workflowName = "A",
-                input = "", startedAt = 1000L, completedAt = null, status = "RUNNING"
+                input = "", startedAt = 1000L, completedAt = null, status = "RUNNING",
+                error = null
             )
         )
         dao.insert(
             WorkflowRunEntity(
                 id = "r2", workflowId = "wf", workflowName = "B",
-                input = "", startedAt = 2000L, completedAt = 2100L, status = "COMPLETED"
+                input = "", startedAt = 2000L, completedAt = 2100L, status = "COMPLETED",
+                error = null
             )
         )
         assertEquals(2, dao.getRunCount())
@@ -208,7 +219,8 @@ class WorkflowRunDaoTest {
     fun insert_replacesOnConflict() = runTest {
         val original = WorkflowRunEntity(
             id = "run-x", workflowId = "wf", workflowName = "Original",
-            input = "in", startedAt = 1000L, completedAt = null, status = "RUNNING"
+            input = "in", startedAt = 1000L, completedAt = null, status = "RUNNING",
+            error = null
         )
         dao.insert(original)
 
