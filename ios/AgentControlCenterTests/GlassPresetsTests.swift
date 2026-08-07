@@ -3,8 +3,8 @@ import SwiftUI
 @testable import AgentControlCenter
 
 // MARK: - 液态玻璃预设单元测试
-// CI-fix: 类标记 @MainActor。glassPill() / glassFloating() / glassInteractive(in:)
-// / glassStatic(in:) / glassTinted(_:in:) / GlassContainer.init 等都是 SwiftUI View
+// CI-fix: 类标记 @MainActor。glassTinted(_:in:) / glassInteractive(in:) /
+// glassMorphID(_:in:) / GlassContainer.init 等都是 SwiftUI View
 // 协议扩展方法（View 是 @MainActor），nonisolated 测试方法调用会报
 // "call to main actor-isolated instance method in a synchronous nonisolated context"。
 @MainActor
@@ -60,23 +60,9 @@ final class GlassPresetsTests: XCTestCase {
     }
 
     // MARK: - GlassPresets View 扩展测试
-
-    /// 验证 .glassPill() 修饰后视图类型可正常构造（不崩溃）
-    /// R4: glassPill 内部 if #available 守卫，iOS 18 / iOS 26 均可构造
-    func testGlassPillModifierProducesView() {
-        let view = Color.red
-            .frame(width: 100, height: 30)
-            .glassPill()
-        XCTAssertNotNil(view, ".glassPill() 应返回非空 View")
-    }
-
-    /// 验证 .glassFloating() 修饰后视图类型可正常构造
-    func testGlassFloatingModifierProducesView() {
-        let view = Color.blue
-            .frame(width: 60, height: 60)
-            .glassFloating()
-        XCTAssertNotNil(view, ".glassFloating() 应返回非空 View")
-    }
+    // v5.1: glassPill / glassFloating / glassStatic 已在 v5.0 UI 改版时删除，
+    //       仅保留 glassInteractive(in:) / glassTinted(_:in:) / glassMorphID(_:in:)。
+    //       测试同步移除已删除 API 的用例，保留并补充现存 API 覆盖。
 
     /// 验证 .glassInteractive(in:) 接受任意 Shape
     func testGlassInteractiveAcceptsArbitraryShape() {
@@ -93,13 +79,12 @@ final class GlassPresetsTests: XCTestCase {
         XCTAssertNotNil(view2, ".glassInteractive(in:) 应接受 Capsule")
     }
 
-    /// 验证 .glassStatic(in:) 接受任意 Shape（非交互式）
-    func testGlassStaticAcceptsArbitraryShape() {
-        let circle = Circle()
+    /// 验证 .glassInteractive(in:) 用 Circle 也可构造
+    func testGlassInteractiveAcceptsCircle() {
         let view = Color.gray
             .frame(width: 40, height: 40)
-            .glassStatic(in: circle)
-        XCTAssertNotNil(view, ".glassStatic(in:) 应接受 Circle")
+            .glassInteractive(in: Circle())
+        XCTAssertNotNil(view, ".glassInteractive(in: Circle()) 应返回非空 View")
     }
 
     /// 验证 .glassTinted(_:in:) 接受 Color tint + 任意 Shape
@@ -111,26 +96,43 @@ final class GlassPresetsTests: XCTestCase {
         XCTAssertNotNil(view, ".glassTinted(_:in:) 应返回非空 View")
     }
 
+    /// 验证 .glassTinted(_:in:) 透明 tint 回退分支（alpha < 0.01 不绘制背景）
+    /// 黑框修复覆盖：透明 tint 不应绘制 ultraThinMaterial 暗色基底
+    func testGlassTintedTransparentTintNoBackground() {
+        let view = Color.clear
+            .frame(width: 60, height: 60)
+            .glassTinted(Color.clear, in: Circle())
+        XCTAssertNotNil(view, "透明 tint 的 .glassTinted(_:in:) 应返回非空 View")
+    }
+
+    /// 验证 .glassTinted(_:in:) 低 opacity tint 回退分支（0.01 ≤ alpha < 0.5）
+    func testGlassTintedLowOpacityTintFallback() {
+        let view = Color.clear
+            .frame(width: 60, height: 60)
+            .glassTinted(Color.gray.opacity(0.3), in: Capsule())
+        XCTAssertNotNil(view, "低 opacity tint 的 .glassTinted(_:in:) 应返回非空 View")
+    }
+
     // MARK: - GlassContainer 测试
 
     /// 验证 GlassContainer 可包裹多个子视图
-    /// R4: 子视图改用 glassPill() 包装（避免直接调用 iOS 26 .glassEffect()）
+    /// v5.1: 子视图改用 glassTinted(_:in:) 包装（glassPill 已删除）
     func testGlassContainerWrapsMultipleChildren() {
         let container = GlassContainer {
             HStack {
-                Text("A").glassPill()
-                Text("B").glassPill()
-                Text("C").glassPill()
+                Text("A").glassTinted(Color.blue.opacity(0.5), in: Capsule())
+                Text("B").glassTinted(Color.blue.opacity(0.5), in: Capsule())
+                Text("C").glassTinted(Color.blue.opacity(0.5), in: Capsule())
             }
         }
-        XCTAssertNotNil(container, "GlassContainer 应可包裹多个 .glassPill() 子视图")
+        XCTAssertNotNil(container, "GlassContainer 应可包裹多个 .glassTinted(_:in:) 子视图")
     }
 
     /// 验证 GlassContainer 默认 spacing 为 GlassTokens.containerSpacing
     func testGlassContainerDefaultSpacing() {
         // 默认 spacing 应为 16pt；由于 spacing 是私有的，仅验证可正常构造
         let _ = GlassContainer {
-            Text("test").glassPill()
+            Text("test").glassTinted(Color.red.opacity(0.5), in: Capsule())
         }
         XCTAssertTrue(true, "GlassContainer 默认构造应成功")
     }
@@ -138,7 +140,7 @@ final class GlassPresetsTests: XCTestCase {
     /// 验证 GlassContainer 可自定义 spacing
     func testGlassContainerCustomSpacing() {
         let _ = GlassContainer(spacing: 30) {
-            Text("test").glassPill()
+            Text("test").glassTinted(Color.red.opacity(0.5), in: Capsule())
         }
         XCTAssertTrue(true, "GlassContainer 自定义 spacing=30 应成功构造")
     }

@@ -44,8 +44,8 @@ android {
             versionProps.load(new FileInputStream(versionPropsFile))
         }
         // C1: fallback 值与 version.properties 当前版本对齐，避免读取失败时回退到过旧版本号。
-        def vCode = (versionProps.getProperty('versionCode') ?: '42').toInteger()
-        def vName = versionProps.getProperty('versionName') ?: '4.8.0'
+        def vCode = (versionProps.getProperty('versionCode') ?: '43').toInteger()
+        def vName = versionProps.getProperty('versionName') ?: '5.1.0'
         versionCode vCode
         versionName vName
 
