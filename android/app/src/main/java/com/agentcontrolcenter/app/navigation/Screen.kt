@@ -48,13 +48,15 @@ sealed class Screen(
         /**
          * Returns the list of primary tab screens shown in the bottom bar / navigation rail.
          *
-         * P0 信息架构重组（阶段 1）：
-         * - 改造前：Chat / Sessions / Activity / Settings（4 个，9 个 Screen 埋在子页）
-         * - 改造后：Chat / Sessions / Agents / Tasks / More（5 个 + 次级入口收敛）
+         * v5.1 信息架构重组（阶段 2）：
+         * - 阶段 1：Chat / Sessions / Agents / Tasks / More
+         * - 阶段 2：Chat / Agents / Activity / Marketplace / Settings
          *
-         * Activity 与 Settings 从主 Tab 移除，下沉为 More 次级入口；
-         * Agents 与 Tasks 从 Settings 子页上提为主 Tab。
+         * Sessions / Tasks 从主 Tab 下沉为首页(ChatScreen)顶部入口融合进首页；
+         * Activity / Marketplace / Settings 从 More 上提为主 Tab；
+         * More Tab 移除，其次级入口(Workflow/Insights/Plugins/Mcp/Compare/DeviceSync)
+         * 通过 Settings 或 ChatScreen 入口可达。
          */
-        fun getTabs(): List<Screen> = listOf(Chat, Sessions, Agents, Tasks, More)
+        fun getTabs(): List<Screen> = listOf(Chat, Agents, Activity, Marketplace, Settings)
     }
 }

@@ -62,7 +62,6 @@ import com.agentcontrolcenter.app.feature.plugin.PluginScreen
 import com.agentcontrolcenter.app.feature.insights.InsightsScreen
 import com.agentcontrolcenter.app.feature.task.TasksScreen
 import com.agentcontrolcenter.app.feature.mcp.McpScreen
-import com.agentcontrolcenter.app.feature.more.MoreScreen
 import com.agentcontrolcenter.app.feature.workflow.WorkflowScreen
 import com.agentcontrolcenter.app.data.model.MarketplaceAgent
 import com.agentcontrolcenter.app.agent.model.AgentConfig
@@ -284,36 +283,38 @@ private fun AppNavHost(
                         ChatScreen(
                             viewModel = chatViewModel,
                             navController = navController,
-                            onNavigateToSettings = { navController.navigate(Screen.Settings.route) }
+                            onNavigateToSessions = { navController.navigate(Screen.Sessions.route) },
+                            onNavigateToTasks = { navController.navigate(Screen.Tasks.route) }
                         )
                     }
                 }
                 composable(Screen.Sessions.route) {
                     CompositionLocalProvider(LocalNavAnimatedVisibilityScope provides this) {
-                        SessionsScreen(chatViewModel)
+                        SessionsScreen(
+                            chatViewModel = chatViewModel,
+                            onBack = { navController.popBackStack() }
+                        )
                     }
                 }
                 composable(Screen.Activity.route) {
                     CompositionLocalProvider(LocalNavAnimatedVisibilityScope provides this) {
-                        ActivityScreen()
+                        ActivityScreen(
+                            onNavigate = { route -> navController.navigate(route) }
+                        )
                     }
                 }
                 composable(Screen.Settings.route) {
                     CompositionLocalProvider(LocalNavAnimatedVisibilityScope provides this) {
                         SettingsScreen(
-                            onNavigateToAgents = { navController.navigate(Screen.Agents.route) },
-                            onNavigateToMarketplace = { navController.navigate(Screen.Marketplace.route) },
-                            onNavigateToInsights = { navController.navigate(Screen.Insights.route) },
-                            onNavigateToDeviceSync = { navController.navigate(Screen.DeviceSync.route) },
-                            onNavigateToPlugins = { navController.navigate(Screen.Plugins.route) },
-                            onNavigateToTasks = { navController.navigate(Screen.Tasks.route) },
-                            onNavigateToMcp = { navController.navigate(Screen.Mcp.route) }
+                            onNavigate = { route -> navController.navigate(route) }
                         )
                     }
                 }
                 composable(Screen.Agents.route) {
                     CompositionLocalProvider(LocalNavAnimatedVisibilityScope provides this) {
-                        AgentsScreen()
+                        AgentsScreen(
+                            onNavigate = { route -> navController.navigate(route) }
+                        )
                     }
                 }
                 composable(Screen.Marketplace.route) {
@@ -363,19 +364,9 @@ private fun AppNavHost(
                         CompareScreen(viewModel = compareViewModel, onBack = { navController.popBackStack() })
                     }
                 }
-                // P0 IA 重组：More 主 Tab — 次级入口收敛页。
-                // 点击入口项后由 MoreScreen 回调 onNavigate(route)，此处统一执行
-                // navController.navigate(route)，不破坏目标 Screen 自身的参数传递与回退栈。
-                // SharedTransition 与预测性返回通过 LocalNavAnimatedVisibilityScope 保持一致。
-                composable(Screen.More.route) {
-                    CompositionLocalProvider(LocalNavAnimatedVisibilityScope provides this) {
-                        MoreScreen(
-                            onNavigate = { route -> navController.navigate(route) }
-                        )
-                    }
-                }
-                // P0 IA 重组：补注册此前缺失的 Workflow 路由（Screen 已定义但未在
-                // NavHost 注册），More → Workflow 跳转才能生效。
+                // v5.1: More Tab 移除 — 次级入口按功能归属分散到对应 Tab：
+                // Workflow/Plugins/Mcp/Compare → Agents Tab 溢出菜单；
+                // Insights → Activity Tab；DeviceSync → Settings「同步」分类。
                 composable(Screen.Workflow.route) {
                     CompositionLocalProvider(LocalNavAnimatedVisibilityScope provides this) {
                         WorkflowScreen(onBack = { navController.popBackStack() })

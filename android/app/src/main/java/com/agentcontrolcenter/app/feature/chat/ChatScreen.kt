@@ -79,7 +79,8 @@ import com.agentcontrolcenter.app.core.ui.HapticFeedback
 fun ChatScreen(
     viewModel: ChatViewModel = hiltViewModel(),
     navController: NavHostController? = null,
-    onNavigateToSettings: () -> Unit = {}
+    onNavigateToSessions: () -> Unit = {},
+    onNavigateToTasks: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
@@ -160,9 +161,11 @@ fun ChatScreen(
             // stacking below it (which caused the "Agent Control Center" title to overlap with the search bar).
             Box(modifier = Modifier.fillMaxSize()) {
                 if (adaptive.shouldShowSidebar) {
-                    TabletChatLayout(uiState, listState, viewModel, onNavigateToSettings, adaptive)
+                    // 双栏：Sessions 已是左侧 sidebar，仅需 Tasks 入口融合到顶栏
+                    TabletChatLayout(uiState, listState, viewModel, onNavigateToTasks, adaptive)
                 } else {
-                    PhoneChatLayout(uiState, listState, viewModel, onNavigateToSettings, adaptive)
+                    // 单栏：Sessions + Tasks 入口均融合到顶栏
+                    PhoneChatLayout(uiState, listState, viewModel, onNavigateToSessions, onNavigateToTasks, adaptive)
                 }
 
                 // Search overlay — rendered on top of the main layout
@@ -234,7 +237,8 @@ private fun PhoneChatLayout(
     uiState: ChatUiState,
     listState: androidx.compose.foundation.lazy.LazyListState,
     viewModel: ChatViewModel,
-    onNavigateToSettings: () -> Unit,
+    onNavigateToSessions: () -> Unit,
+    onNavigateToTasks: () -> Unit,
     adaptive: AdaptiveConfig
 ) {
     // 向导模式：全屏覆盖，不显示输入栏
@@ -273,7 +277,7 @@ private fun PhoneChatLayout(
 
     // 正常聊天模式
     Scaffold(
-        topBar = { ChatTopBar(uiState, viewModel, onNavigateToSettings) },
+        topBar = { ChatTopBar(uiState, viewModel, onNavigateToSessions, onNavigateToTasks) },
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             Column {
@@ -338,7 +342,7 @@ private fun TabletChatLayout(
     uiState: ChatUiState,
     listState: androidx.compose.foundation.lazy.LazyListState,
     viewModel: ChatViewModel,
-    onNavigateToSettings: () -> Unit,
+    onNavigateToTasks: () -> Unit,
     adaptive: AdaptiveConfig
 ) {
     // 向导模式：全屏覆盖
@@ -445,7 +449,7 @@ private fun TabletChatLayout(
         // Chat area
         Scaffold(
             modifier = Modifier.weight(1f),
-            topBar = { ChatTopBar(uiState, viewModel, onNavigateToSettings) },
+            topBar = { ChatTopBar(uiState, viewModel, onNavigateToSessions = {}, onNavigateToTasks = onNavigateToTasks) },
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             bottomBar = {
                 Column {
@@ -502,7 +506,8 @@ private fun TabletChatLayout(
 private fun ChatTopBar(
     uiState: ChatUiState,
     viewModel: ChatViewModel,
-    onNavigateToSettings: () -> Unit
+    onNavigateToSessions: () -> Unit,
+    onNavigateToTasks: () -> Unit
 ) {
     var showClearDialog by remember { mutableStateOf(false) }
 
@@ -576,14 +581,18 @@ private fun ChatTopBar(
             IconButton(onClick = { viewModel.createNewSession() }) {
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.new_chat))
             }
+            // v5.1: Sessions/Tasks 从主 Tab 融合进首页顶栏入口
+            IconButton(onClick = onNavigateToSessions) {
+                Icon(Icons.Default.History, contentDescription = stringResource(R.string.nav_sessions))
+            }
+            IconButton(onClick = onNavigateToTasks) {
+                Icon(Icons.Default.TaskAlt, contentDescription = stringResource(R.string.nav_tasks))
+            }
             IconButton(onClick = { viewModel.enterVoiceChatMode() }) {
                 Icon(Icons.Default.Headset, contentDescription = stringResource(R.string.voice_mode))
             }
             IconButton(onClick = { showClearDialog = true }) {
                 Icon(Icons.Default.DeleteSweep, contentDescription = stringResource(R.string.action_clear))
-            }
-            IconButton(onClick = onNavigateToSettings) {
-                Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.nav_settings))
             }
         },
     )

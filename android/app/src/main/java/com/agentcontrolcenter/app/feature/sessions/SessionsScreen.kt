@@ -5,13 +5,14 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.agentcontrolcenter.app.ui.theme.ShapeS12
 import com.agentcontrolcenter.app.ui.theme.ShapeS8
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -54,7 +55,8 @@ enum class SessionSortMode { LAST_UPDATED, CREATED, NAME }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SessionsScreen(
-    chatViewModel: ChatViewModel? = null
+    chatViewModel: ChatViewModel? = null,
+    onBack: (() -> Unit)? = null
 ) {
     val adaptive = currentAdaptiveConfig()
     val context = LocalContext.current
@@ -72,12 +74,14 @@ fun SessionsScreen(
             adaptive = adaptive
         )
     } else {
+        // v5.1: Sessions 从 Tab 下沉为首页 push 页面，单栏需要返回按钮
         SessionsSinglePaneLayout(
             sessionList = sessionList,
             currentSessionId = currentSessionId,
             chatViewModel = chatViewModel,
             adaptive = adaptive,
-            isLoading = isLoadingSessions
+            isLoading = isLoadingSessions,
+            onBack = onBack
         )
     }
 }
@@ -340,7 +344,8 @@ private fun SessionsSinglePaneLayout(
     currentSessionId: String?,
     chatViewModel: ChatViewModel?,
     adaptive: com.agentcontrolcenter.app.ui.adaptive.AdaptiveConfig,
-    isLoading: Boolean = true
+    isLoading: Boolean = true,
+    onBack: (() -> Unit)? = null
 ) {
     val maxContentWidth = if (adaptive.isTablet) 720.dp else 600.dp
     val context = LocalContext.current
@@ -368,6 +373,14 @@ private fun SessionsSinglePaneLayout(
         topBar = {
             AppTopAppBar(
                 title = { Text(stringResource(R.string.nav_sessions)) },
+                navigationIcon = {
+                    // v5.1: Sessions 作为 push 页面时显示返回按钮
+                    if (onBack != null) {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.btn_back))
+                        }
+                    }
+                },
                 actions = {
                     // 排序按钮 + 下拉菜单
                     Box {

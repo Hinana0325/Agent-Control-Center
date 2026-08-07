@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.agentcontrolcenter.app.R
+import com.agentcontrolcenter.app.navigation.Screen
 import com.agentcontrolcenter.app.data.model.ActivityItem
 import com.agentcontrolcenter.app.ui.adaptive.WindowWidthClass
 import com.agentcontrolcenter.app.ui.adaptive.currentAdaptiveConfig
@@ -34,7 +35,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ActivityScreen(
-    activityViewModel: ActivityViewModel = hiltViewModel()
+    activityViewModel: ActivityViewModel = hiltViewModel(),
+    onNavigate: (String) -> Unit = {}
 ) {
     val uiState by activityViewModel.uiState.collectAsStateWithLifecycle()
     val adaptive = currentAdaptiveConfig()
@@ -60,6 +62,10 @@ fun ActivityScreen(
             AppTopAppBar(
                 title = { Text(stringResource(R.string.nav_activity)) },
                 actions = {
+                    // v5.1: Insights（运行观察）按功能归属放在 Activity Tab
+                    IconButton(onClick = { onNavigate(Screen.Insights.route) }) {
+                        Icon(Screen.Insights.icon, contentDescription = stringResource(Screen.Insights.stringResId))
+                    }
                     if (uiState.activities.isNotEmpty()) {
                         IconButton(onClick = { activityViewModel.clearLog() }) {
                             Icon(Icons.Default.DeleteSweep, contentDescription = stringResource(R.string.action_clear))

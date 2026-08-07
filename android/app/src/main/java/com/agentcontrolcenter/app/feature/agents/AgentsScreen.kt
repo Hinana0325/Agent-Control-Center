@@ -38,6 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.agentcontrolcenter.app.R
+import com.agentcontrolcenter.app.navigation.Screen
 import com.agentcontrolcenter.app.agent.model.AgentConfig
 import com.agentcontrolcenter.app.agent.model.AgentType
 import com.agentcontrolcenter.app.agent.model.AgentTypeUi
@@ -55,13 +56,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AgentsScreen(
-    agentsViewModel: AgentsViewModel = hiltViewModel()
+    agentsViewModel: AgentsViewModel = hiltViewModel(),
+    onNavigate: (String) -> Unit = {}
 ) {
     val uiState by agentsViewModel.uiState.collectAsStateWithLifecycle()
     val adaptive = currentAdaptiveConfig()
     val useGrid = adaptive.widthClass == WindowWidthClass.Expanded
     val context = LocalContext.current
     var showFabMenu by remember { mutableStateOf(false) }
+    var showOverflowMenu by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Import file launcher
@@ -101,6 +104,40 @@ fun AgentsScreen(
         topBar = {
             AppTopAppBar(
                 title = { Text(stringResource(R.string.nav_agents)) },
+                actions = {
+                    // v5.1: Agent 能力相关次级入口（原 More Tab 悬空项按功能归属下沉）
+                    // Workflow/Plugins/Mcp/Compare 均围绕「使用/扩展 Agent」，就近放在 Agents Tab
+                    Box {
+                        IconButton(onClick = { showOverflowMenu = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "更多")
+                        }
+                        AppDropdownMenu(
+                            expanded = showOverflowMenu,
+                            onDismissRequest = { showOverflowMenu = false }
+                        ) {
+                            AppDropdownMenuItem(
+                                text = { Text(stringResource(Screen.Workflow.stringResId)) },
+                                onClick = { showOverflowMenu = false; onNavigate(Screen.Workflow.route) },
+                                leadingIcon = { Icon(Screen.Workflow.icon, contentDescription = null, modifier = Modifier.size(20.dp)) }
+                            )
+                            AppDropdownMenuItem(
+                                text = { Text(stringResource(Screen.Plugins.stringResId)) },
+                                onClick = { showOverflowMenu = false; onNavigate(Screen.Plugins.route) },
+                                leadingIcon = { Icon(Screen.Plugins.icon, contentDescription = null, modifier = Modifier.size(20.dp)) }
+                            )
+                            AppDropdownMenuItem(
+                                text = { Text(stringResource(Screen.Mcp.stringResId)) },
+                                onClick = { showOverflowMenu = false; onNavigate(Screen.Mcp.route) },
+                                leadingIcon = { Icon(Screen.Mcp.icon, contentDescription = null, modifier = Modifier.size(20.dp)) }
+                            )
+                            AppDropdownMenuItem(
+                                text = { Text(stringResource(Screen.Compare.stringResId)) },
+                                onClick = { showOverflowMenu = false; onNavigate(Screen.Compare.route) },
+                                leadingIcon = { Icon(Screen.Compare.icon, contentDescription = null, modifier = Modifier.size(20.dp)) }
+                            )
+                        }
+                    }
+                },
                 scrollBehavior = scrollBehavior
             )
         },
