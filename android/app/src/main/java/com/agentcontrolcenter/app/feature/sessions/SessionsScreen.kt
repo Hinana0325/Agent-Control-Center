@@ -377,7 +377,10 @@ private fun SessionsSinglePaneLayout(
                     // v5.1: Sessions 作为 push 页面时显示返回按钮
                     if (onBack != null) {
                         IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.btn_back))
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.btn_back)
+                            )
                         }
                     }
                 },

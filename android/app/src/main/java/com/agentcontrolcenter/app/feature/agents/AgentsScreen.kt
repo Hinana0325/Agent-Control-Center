@@ -118,22 +118,46 @@ fun AgentsScreen(
                             AppDropdownMenuItem(
                                 text = { Text(stringResource(Screen.Workflow.stringResId)) },
                                 onClick = { showOverflowMenu = false; onNavigate(Screen.Workflow.route) },
-                                leadingIcon = { Icon(Screen.Workflow.icon, contentDescription = null, modifier = Modifier.size(20.dp)) }
+                                leadingIcon = {
+                                    Icon(
+                                        Screen.Workflow.icon,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                             )
                             AppDropdownMenuItem(
                                 text = { Text(stringResource(Screen.Plugins.stringResId)) },
                                 onClick = { showOverflowMenu = false; onNavigate(Screen.Plugins.route) },
-                                leadingIcon = { Icon(Screen.Plugins.icon, contentDescription = null, modifier = Modifier.size(20.dp)) }
+                                leadingIcon = {
+                                    Icon(
+                                        Screen.Plugins.icon,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                             )
                             AppDropdownMenuItem(
                                 text = { Text(stringResource(Screen.Mcp.stringResId)) },
                                 onClick = { showOverflowMenu = false; onNavigate(Screen.Mcp.route) },
-                                leadingIcon = { Icon(Screen.Mcp.icon, contentDescription = null, modifier = Modifier.size(20.dp)) }
+                                leadingIcon = {
+                                    Icon(
+                                        Screen.Mcp.icon,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                             )
                             AppDropdownMenuItem(
                                 text = { Text(stringResource(Screen.Compare.stringResId)) },
                                 onClick = { showOverflowMenu = false; onNavigate(Screen.Compare.route) },
-                                leadingIcon = { Icon(Screen.Compare.icon, contentDescription = null, modifier = Modifier.size(20.dp)) }
+                                leadingIcon = {
+                                    Icon(
+                                        Screen.Compare.icon,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                             )
                         }
                     }

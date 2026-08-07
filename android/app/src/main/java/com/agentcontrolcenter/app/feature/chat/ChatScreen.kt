@@ -449,7 +449,13 @@ private fun TabletChatLayout(
         // Chat area
         Scaffold(
             modifier = Modifier.weight(1f),
-            topBar = { ChatTopBar(uiState, viewModel, onNavigateToSessions = {}, onNavigateToTasks = onNavigateToTasks) },
+            topBar = {
+                ChatTopBar(
+                    uiState, viewModel,
+                    onNavigateToSessions = {},
+                    onNavigateToTasks = onNavigateToTasks
+                )
+            },
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             bottomBar = {
                 Column {

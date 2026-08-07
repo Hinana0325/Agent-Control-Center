@@ -39,7 +39,11 @@ style:
 naming:
   active: true
   FunctionNaming:
-    functionPattern: '([a-z][a-zA-Z0-9]*)|(`.*`)'
+    # Compose @Composable 函数按惯例使用 PascalCase（如 SettingsScreen、ChatTopBar），
+    # 与 detekt 默认仅允许 camelCase 的 functionPattern 冲突，产生大量误报。
+    # 放开 pattern 允许 PascalCase，消除整类误报；baseline 中 130+ 条 FunctionNaming
+    # 条目随之失效（无害），新增 Composable 函数不再触发。
+    functionPattern: '([a-z][a-zA-Z0-9]*)|([A-Z][a-zA-Z0-9]*)|(`.*`)'
   VariableNaming:
     variablePattern: '([a-z][a-zA-Z0-9]*)|(`.*`)'
 

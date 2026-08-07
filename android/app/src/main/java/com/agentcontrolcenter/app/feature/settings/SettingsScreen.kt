@@ -526,7 +526,8 @@ private fun LazyListScope.settingsDetail(
             item {
                 SettingsItem(
                     title = androidx.compose.ui.res.stringResource(R.string.check_update),
-                    subtitle = if (s.isChecking) androidx.compose.ui.res.stringResource(R.string.checking_update) else "v${s.currentVersion}",
+                    subtitle = if (s.isChecking) androidx.compose.ui.res.stringResource(R.string.checking_update)
+                        else "v${s.currentVersion}",
                     icon = Icons.Default.SystemUpdate,
                     onClick = s.onCheckUpdate
                 )
