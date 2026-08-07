@@ -244,6 +244,16 @@ dependencies {
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+
+    // v4.9.0: Room DAO instrumented tests (src/androidTest/) need:
+    // - room-testing: MigrationTestHelper + Room inMemory builder support
+    // - test:core: ApplicationProvider (AndroidJUnit4 test context)
+    // - kotlinx-coroutines-test: runTest { } for suspend DAO calls
+    // These tests were originally misplaced under src/test/ (unit test sourceset),
+    // where Room.inMemoryDatabaseBuilder + ApplicationProvider can't resolve.
+    androidTestImplementation "androidx.test:core:1.5.0"
+    androidTestImplementation "androidx.room:room-testing:$roomVersion"
+    androidTestImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2"
 }
 
 // D3: 显式指定 detekt 任务的 jvmTarget，避免 detekt-cli 自动检测运行时 JDK 版本。
