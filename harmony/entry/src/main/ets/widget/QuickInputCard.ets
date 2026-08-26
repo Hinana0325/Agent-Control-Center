@@ -1,6 +1,6 @@
 // QuickInputCard — FormKit 快捷输入服务卡片 UI（对标 android Widget 快捷输入卡片）
 //
-// 卡片布局（2x2 / 2x4 通用）：
+// 2x2 竖版布局（2x4 宽版见 QuickInputCardWide.ets）：
 //   ┌──────────────────────┐
 //   │ ● Agent Name     12ms │  ← 连接状态点 + Agent 名 + 延迟
 //   │ Tap to send a message │  ← 快捷输入提示
@@ -20,10 +20,10 @@ struct QuickInputCard {
   @LocalStorageProp('isConnected') isConnected: boolean = false;
   @LocalStorageProp('latencyLabel') latencyLabel: string = '';
 
-  build(): void {
-    Column(): void {
+  build() {
+    Column() {
       // ── 顶部：连接状态 + Agent 名 ──
-      Row(): void {
+      Row() {
         Circle({ width: 8, height: 8 })
           .fill(this.isConnected ? '#10B981' : '#C4C6D0')
         Text(this.agentName)

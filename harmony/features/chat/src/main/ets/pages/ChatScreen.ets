@@ -37,6 +37,10 @@ export struct ChatScreen {
       CardDataProvider.updateConnectionState(getContext(this) as common.Context,
         connected, connected ? this.viewModel.getConnectedAgentName() : null);
     };
+    this.viewModel.onLatencyMeasured = (latencyMs: number): void => {
+      // H5 服务卡片：同步连接握手延迟到 FormKit 卡片数据桥
+      CardDataProvider.updateLatency(getContext(this) as common.Context, latencyMs);
+    };
     this.viewModel.onError = (message: string): void => {
       this.errorMessage = message;
     };
@@ -47,8 +51,8 @@ export struct ChatScreen {
     await this.viewModel.connect();
   }
 
-  build(): void {
-    Column(): void {
+  build() {
+    Column() {
       // ── 顶部标题栏 + 连接状态 ──
       this.buildHeader();
 
@@ -69,15 +73,15 @@ export struct ChatScreen {
   }
 
   @Builder
-  buildHeader(): void {
-    Row(): void {
+  buildHeader() {
+    Row() {
       Text($r('app.string.chat_title'))
         .fontSize(AppType.headlineMedium)
         .fontWeight(AppType.semibold)
         .fontColor(AppColors.onSurface);
 
       // 连接状态指示点
-      Row(): void {
+      Row() {
         Circle({ width: 8, height: 8 })
           .fill(this.isConnected ? AppColors.success : AppColors.outline);
         Text(this.isConnected
@@ -96,8 +100,8 @@ export struct ChatScreen {
   }
 
   @Builder
-  buildErrorBanner(): void {
-    Row(): void {
+  buildErrorBanner() {
+    Row() {
       Text(this.errorMessage)
         .fontSize(AppType.bodySmall)
         .fontColor(AppColors.onPrimary)
@@ -109,10 +113,10 @@ export struct ChatScreen {
   }
 
   @Builder
-  buildMessageList(): void {
+  buildMessageList() {
     if (this.messages.length === 0) {
       // 空状态
-      Column(): void {
+      Column() {
         Text(this.isConnected
           ? $r('app.string.chat_empty_ready')
           : $r('app.string.chat_empty_no_agent'))
@@ -124,9 +128,9 @@ export struct ChatScreen {
       .justifyContent(FlexAlign.Center)
       .alignItems(HorizontalAlign.Center);
     } else {
-      List({ scroller: this.scroller }): void {
+      List({ scroller: this.scroller }) {
         ForEach(this.messages, (msg: ChatMessage, idx: number): void => {
-          ListItem(): void {
+          ListItem() {
             this.buildMessageBubble(msg);
           }
           .key(msg.id);
@@ -140,11 +144,11 @@ export struct ChatScreen {
   }
 
   @Builder
-  buildMessageBubble(msg: ChatMessage): void {
+  buildMessageBubble(msg: ChatMessage) {
     // 用户消息右对齐，助手消息左对齐
     if (msg.role === MessageRole.User) {
-      Row(): void {
-        Column(): void {
+      Row() {
+        Column() {
           Text(msg.content)
             .fontSize(AppType.bodyMedium)
             .fontColor(AppColors.onPrimaryContainer);
@@ -158,8 +162,8 @@ export struct ChatScreen {
       .margin({ top: AppSpacing.s, bottom: AppSpacing.s })
       .justifyContent(FlexAlign.End);
     } else {
-      Row(): void {
-        Column(): void {
+      Row() {
+        Column() {
           if (msg.content.length > 0) {
             Text(msg.content)
               .fontSize(AppType.bodyMedium)
@@ -183,8 +187,8 @@ export struct ChatScreen {
   }
 
   @Builder
-  buildInputBar(): void {
-    Row(): void {
+  buildInputBar() {
+    Row() {
       TextInput({ text: this.inputText, placeholder: $r('app.string.chat_input_hint') })
         .layoutWeight(1)
         .fontSize(AppType.bodyMedium)

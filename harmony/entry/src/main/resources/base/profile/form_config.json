@@ -12,10 +12,24 @@
       "scheduledUpdateTime": "00:00",
       "updateEnabled": true,
       "supportDimensions": [
-        "2x2",
-        "2x4"
+        "2x2"
       ],
       "defaultDimension": "2x2"
+    },
+    {
+      "name": "QuickInputCardWide",
+      "description": "$string:card_send_hint",
+      "src": "./ets/widget/QuickInputCardWide.ets",
+      "uiSyntax": "arkts",
+      "window": {
+        "designWidth": 720
+      },
+      "scheduledUpdateTime": "00:00",
+      "updateEnabled": true,
+      "supportDimensions": [
+        "2x4"
+      ],
+      "defaultDimension": "2x4"
     }
   ]
 }

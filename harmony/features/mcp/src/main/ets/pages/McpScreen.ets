@@ -31,8 +31,8 @@ export struct McpScreen {
     await this.viewModel.init(getContext(this) as common.Context);
   }
 
-  build(): void {
-    Column(): void {
+  build() {
+    Column() {
       this.buildHeader();
       if (this.message.length > 0) {
         Text(this.message)
@@ -52,8 +52,8 @@ export struct McpScreen {
   }
 
   @Builder
-  buildHeader(): void {
-    Row(): void {
+  buildHeader() {
+    Row() {
       Text($r('app.string.mcp_title'))
         .fontSize(AppType.headlineMedium)
         .fontWeight(AppType.semibold)
@@ -66,9 +66,9 @@ export struct McpScreen {
   }
 
   @Builder
-  buildServerList(): void {
+  buildServerList() {
     if (this.rows.length === 0 && !this.showForm) {
-      Column(): void {
+      Column() {
         Text($r('app.string.mcp_empty'))
           .fontSize(AppType.bodyMedium)
           .fontColor(AppColors.outline)
@@ -77,12 +77,12 @@ export struct McpScreen {
       .padding({ top: AppSpacing.xl })
       .alignItems(HorizontalAlign.Center)
     } else {
-      List(): void {
+      List() {
         ForEach(this.rows, (row: McpServerRowState): void => {
-          ListItem(): void {
-            Column(): void {
-              Row(): void {
-                Column(): void {
+          ListItem() {
+            Column() {
+              Row() {
+                Column() {
                   Text(row.server.name)
                     .fontSize(AppType.bodyLarge)
                     .fontWeight(AppType.medium)
@@ -103,7 +103,7 @@ export struct McpScreen {
               }
               .width('100%')
 
-              Row(): void {
+              Row() {
                 if (row.connectionState === McpConnectionState.Connected) {
                   Button($r('app.string.mcp_disconnect'))
                     .fontSize(AppType.labelMedium)
@@ -166,10 +166,10 @@ export struct McpScreen {
   }
 
   @Builder
-  buildToolsSection(): void {
+  buildToolsSection() {
     if (this.tools.length > 0) {
-      Column(): void {
-        Text(): void {
+      Column() {
+        Text() {
           Span($r('app.string.mcp_tools_title'))
           Span(` (${this.tools.length})`)
         }
@@ -190,9 +190,9 @@ export struct McpScreen {
   }
 
   @Builder
-  buildAddButton(): void {
+  buildAddButton() {
     if (this.showForm) {
-      Column(): void {
+      Column() {
         TextInput({ text: this.formName, placeholder: $r('app.string.mcp_name_hint') })
           .fontSize(AppType.bodyMedium)
           .borderRadius(AppShape.s)
@@ -217,7 +217,7 @@ export struct McpScreen {
           .onChange((value: string): void => {
             this.formApiKey = value;
           })
-        Row(): void {
+        Row() {
           Button($r('app.string.mcp_cancel'))
             .fontSize(AppType.labelLarge)
             .borderRadius(AppShape.s)

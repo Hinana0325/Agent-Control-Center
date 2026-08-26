@@ -4,9 +4,9 @@ import { AppColors } from 'common';
 
 @Component
 export struct ActivityScreen {
-  build(): void {
-    Column(): void {
-      Row(): void {
+  build() {
+    Column() {
+      Row() {
         Text('Activity')
           .fontSize(20)
           .fontWeight(FontWeight.Bold)
@@ -18,7 +18,7 @@ export struct ActivityScreen {
       .justifyContent(FlexAlign.Start)
       .alignItems(VerticalAlign.Center)
 
-      Column(): void {
+      Column() {
         Text('Activity — Coming Soon')
           .fontSize(16)
           .fontColor(AppColors.outline)

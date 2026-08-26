@@ -21,13 +21,13 @@ struct Index {
     { title: $r('app.string.nav_settings'), icon: $r('app.media.ic_settings') }
   ];
 
-  build(): void {
-    Column(): void {
+  build() {
+    Column() {
       // 内容区：按当前 Tab 渲染对应 feature
       // 占位阶段：未实现的 feature 显示 Coming Soon
       Tabs({ index: this.currentTab }) {
         ForEach(this.tabs, (tab: TabInfo, idx: number): void => {
-          TabContent(): void {
+          TabContent() {
             this.buildTabContent(idx)
           }
           .tabBar(this.buildTabBar(tab, idx))
@@ -45,7 +45,7 @@ struct Index {
   }
 
   @Builder
-  buildTabContent(idx: number): void {
+  buildTabContent(idx: number) {
     if (idx === 0) {
       ChatScreen()
     } else if (idx === 1) {
@@ -60,8 +60,8 @@ struct Index {
   }
 
   @Builder
-  buildTabBar(tab: TabInfo, idx: number): void {
-    Column(): void {
+  buildTabBar(tab: TabInfo, idx: number) {
+    Column() {
       Image(tab.icon)
         .width(24)
         .height(24)

@@ -4,9 +4,9 @@ import { AppColors } from 'common';
 
 @Component
 export struct MarketplaceScreen {
-  build(): void {
-    Column(): void {
-      Row(): void {
+  build() {
+    Column() {
+      Row() {
         Text('Marketplace')
           .fontSize(20)
           .fontWeight(FontWeight.Bold)
@@ -18,7 +18,7 @@ export struct MarketplaceScreen {
       .justifyContent(FlexAlign.Start)
       .alignItems(VerticalAlign.Center)
 
-      Column(): void {
+      Column() {
         Text('Marketplace — Coming Soon')
           .fontSize(16)
           .fontColor(AppColors.outline)

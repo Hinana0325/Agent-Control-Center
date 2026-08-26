@@ -29,6 +29,7 @@ export class ChatViewModel {
   onMessagesChanged?: (messages: ChatMessage[]) => void;
   onStreamingChanged?: (isStreaming: boolean) => void;
   onConnectionChanged?: (isConnected: boolean) => void;
+  onLatencyMeasured?: (latencyMs: number) => void;
   onError?: (message: string) => void;
 
   // 当前消息列表
@@ -57,6 +58,10 @@ export class ChatViewModel {
     this.connectionRepo.setConnectionStateListener((state: AgentConnectionState): void => {
       if (this.onConnectionChanged !== undefined) {
         this.onConnectionChanged(state.isConnected);
+      }
+      // 连接成功时透传状态快照中的握手延迟（供服务卡片显示）
+      if (state.isConnected && state.latency > 0 && this.onLatencyMeasured !== undefined) {
+        this.onLatencyMeasured(state.latency);
       }
     });
 

@@ -15,8 +15,8 @@ type SubPage = 'workflow' | 'mcp' | null;
 export struct AgentsScreen {
   @State subPage: SubPage = null;
 
-  build(): void {
-    Column(): void {
+  build() {
+    Column() {
       if (this.subPage === 'workflow') {
         this.buildSubPageHeader('Workflow', (): void => {
           this.subPage = null;
@@ -37,9 +37,9 @@ export struct AgentsScreen {
   }
 
   @Builder
-  buildMainList(): void {
-    Column(): void {
-      Row(): void {
+  buildMainList() {
+    Column() {
+      Row() {
         Text('Agents')
           .fontSize(AppType.headlineMedium)
           .fontWeight(AppType.semibold)
@@ -50,7 +50,7 @@ export struct AgentsScreen {
       .padding({ left: AppSpacing.l, right: AppSpacing.l })
       .alignItems(VerticalAlign.Center)
 
-      Column(): void {
+      Column() {
         Text($r('app.string.agents_coming_soon'))
           .fontSize(AppType.bodyLarge)
           .fontColor(AppColors.outline)
@@ -62,14 +62,14 @@ export struct AgentsScreen {
       .alignItems(HorizontalAlign.Center)
 
       // v5.1 IA：次级入口（对标 Android Agents Tab 溢出菜单）
-      Column(): void {
+      Column() {
         Text($r('app.string.agents_more'))
           .fontSize(AppType.labelLarge)
           .fontWeight(AppType.medium)
           .fontColor(AppColors.onSurface)
           .margin({ bottom: AppSpacing.s })
 
-        Row(): void {
+        Row() {
           this.buildEntryPoint('Workflow', $r('app.string.agents_workflow_sub'), (): void => {
             this.subPage = 'workflow';
           })
@@ -89,8 +89,8 @@ export struct AgentsScreen {
   }
 
   @Builder
-  buildEntryPoint(title: string, subtitle: Resource, onTap: () => void): void {
-    Column(): void {
+  buildEntryPoint(title: string, subtitle: Resource, onTap: () => void) {
+    Column() {
       Text(title)
         .fontSize(AppType.bodyLarge)
         .fontWeight(AppType.medium)
@@ -112,8 +112,8 @@ export struct AgentsScreen {
   }
 
   @Builder
-  buildSubPageHeader(title: string, onBack: () => void): void {
-    Row(): void {
+  buildSubPageHeader(title: string, onBack: () => void) {
+    Row() {
       Button('<')
         .fontSize(AppType.labelLarge)
         .borderRadius(AppShape.full)

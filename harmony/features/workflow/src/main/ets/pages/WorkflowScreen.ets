@@ -37,8 +37,8 @@ export struct WorkflowScreen {
     await this.viewModel.loadHistory();
   }
 
-  build(): void {
-    Column(): void {
+  build() {
+    Column() {
       this.buildHeader();
       this.buildTemplateList();
       this.buildInputBar();
@@ -51,8 +51,8 @@ export struct WorkflowScreen {
   }
 
   @Builder
-  buildHeader(): void {
-    Row(): void {
+  buildHeader() {
+    Row() {
       Text($r('app.string.workflow_title'))
         .fontSize(AppType.headlineMedium)
         .fontWeight(AppType.semibold)
@@ -65,11 +65,11 @@ export struct WorkflowScreen {
   }
 
   @Builder
-  buildTemplateList(): void {
-    List({ scroller: this.scroller }): void {
+  buildTemplateList() {
+    List({ scroller: this.scroller }) {
       ForEach(this.templates, (tpl: Workflow, idx: number): void => {
-        ListItem(): void {
-          Column(): void {
+        ListItem() {
+          Column() {
             Text(tpl.name)
               .fontSize(AppType.bodyLarge)
               .fontWeight(AppType.medium)
@@ -80,7 +80,7 @@ export struct WorkflowScreen {
               .fontColor(this.selectedIndex === idx
                 ? AppColors.onPrimaryContainer : AppColors.outline)
               .margin({ top: AppSpacing.xs })
-            Text(): void {
+            Text() {
               Span(`${tpl.nodes.length}`)
               Span($r('app.string.workflow_nodes_suffix'))
             }
@@ -110,8 +110,8 @@ export struct WorkflowScreen {
   }
 
   @Builder
-  buildInputBar(): void {
-    Row(): void {
+  buildInputBar() {
+    Row() {
       TextInput({ text: this.inputText, placeholder: $r('app.string.workflow_input_hint') })
         .layoutWeight(1)
         .fontSize(AppType.bodyMedium)
@@ -140,9 +140,9 @@ export struct WorkflowScreen {
   }
 
   @Builder
-  buildExecutionSection(): void {
+  buildExecutionSection() {
     if (this.currentLog.length > 0 || this.output.length > 0) {
-      Column(): void {
+      Column() {
         if (this.currentLog.length > 0) {
           Text(this.currentLog)
             .fontSize(AppType.bodySmall)
@@ -151,7 +151,7 @@ export struct WorkflowScreen {
             .textOverflow({ overflow: TextOverflow.Ellipsis })
         }
         if (this.output.length > 0) {
-          Scroll(): void {
+          Scroll() {
             Text(this.output)
               .fontSize(AppType.bodySmall)
               .fontColor(AppColors.onSurface)
@@ -169,7 +169,7 @@ export struct WorkflowScreen {
       .backgroundColor(AppColors.surfaceVariant)
       .alignItems(HorizontalAlign.Start)
     } else {
-      Column(): void {
+      Column() {
         Text($r('app.string.workflow_select_hint'))
           .fontSize(AppType.bodyMedium)
           .fontColor(AppColors.outline)
@@ -182,8 +182,8 @@ export struct WorkflowScreen {
   }
 
   @Builder
-  buildHistorySection(): void {
-    Column(): void {
+  buildHistorySection() {
+    Column() {
       Text($r('app.string.workflow_history'))
         .fontSize(AppType.labelLarge)
         .fontWeight(AppType.medium)
@@ -195,11 +195,11 @@ export struct WorkflowScreen {
           .fontSize(AppType.bodySmall)
           .fontColor(AppColors.outline)
       } else {
-        List(): void {
+        List() {
           ForEach(this.runs, (run: WorkflowRunEntity): void => {
-            ListItem(): void {
-              Row(): void {
-                Column(): void {
+            ListItem() {
+              Row() {
+                Column() {
                   Text(run.workflowName)
                     .fontSize(AppType.bodyMedium)
                     .fontColor(AppColors.onSurface)

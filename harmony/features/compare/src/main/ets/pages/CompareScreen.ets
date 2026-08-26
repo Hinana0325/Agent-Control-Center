@@ -4,9 +4,9 @@ import { AppColors } from 'common';
 
 @Component
 export struct CompareScreen {
-  build(): void {
-    Column(): void {
-      Row(): void {
+  build() {
+    Column() {
+      Row() {
         Text('Compare')
           .fontSize(20)
           .fontWeight(FontWeight.Bold)
@@ -18,7 +18,7 @@ export struct CompareScreen {
       .justifyContent(FlexAlign.Start)
       .alignItems(VerticalAlign.Center)
 
-      Column(): void {
+      Column() {
         Text('Compare — Coming Soon')
           .fontSize(16)
           .fontColor(AppColors.outline)

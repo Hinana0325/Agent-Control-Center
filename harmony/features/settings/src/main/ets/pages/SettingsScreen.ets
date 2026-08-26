@@ -4,9 +4,9 @@ import { AppColors } from 'common';
 
 @Component
 export struct SettingsScreen {
-  build(): void {
-    Column(): void {
-      Row(): void {
+  build() {
+    Column() {
+      Row() {
         Text('Settings')
           .fontSize(20)
           .fontWeight(FontWeight.Bold)
@@ -18,7 +18,7 @@ export struct SettingsScreen {
       .justifyContent(FlexAlign.Start)
       .alignItems(VerticalAlign.Center)
 
-      Column(): void {
+      Column() {
         Text('Settings — Coming Soon')
           .fontSize(16)
           .fontColor(AppColors.outline)
