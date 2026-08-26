@@ -202,6 +202,17 @@
     <string name="perf_total_messages">Total Messages</string>
     <string name="perf_uptime">Uptime</string>
 
+    <!-- Vendor keep-alive (MIUI/HyperOS adaptation) -->
+    <string name="vendor_keepalive_title">Vendor Keep-Alive</string>
+    <string name="vendor_keepalive_desc">Required on aggressive ROMs (MIUI/HyperOS) to keep the agent connection alive in background</string>
+    <string name="vendor_battery_title">Battery Optimization</string>
+    <string name="vendor_battery_ok">Excluded from battery optimization</string>
+    <string name="vendor_battery_limited">Limited by battery optimization — tap to fix</string>
+    <string name="vendor_autostart_title">Auto-Start</string>
+    <string name="vendor_autostart_desc">Allow auto-start in system settings, then enable for this app</string>
+    <string name="vendor_power_title">Power Policy</string>
+    <string name="vendor_power_desc">Set background power policy to \u201cNo restrictions\u201d in app info</string>
+
     <!-- Accessibility -->
     <string name="a11y_send_message">Send message</string>
     <string name="a11y_stop_generation">Stop generation</string>

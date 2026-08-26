@@ -493,6 +493,8 @@ private fun LazyListScope.settingsDetail(
                 value = "${s.performanceMetrics.uptimeMinutes} min",
                 icon = Icons.Default.AccessTime
             ) }
+            // 厂商保活优化：仅小米系设备（MIUI/HyperOS）渲染，其他设备为空
+            item { VendorKeepAliveSection() }
         }
         "notifications" -> {
             item { SettingsHeader(androidx.compose.ui.res.stringResource(R.string.smart_notif_title)) }

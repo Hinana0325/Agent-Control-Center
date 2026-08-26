@@ -107,6 +107,21 @@
             </intent-filter>
         </receiver>
 
+        <!--
+            厂商适配：开机自启动 / 应用更新后恢复 Agent 连接前台服务。
+            仅当本地已保存可用 Agent 配置时拉起（见 BootCompletedReceiver）。
+            MIUI/HyperOS 上需用户在系统设置中授予自启动权限后才能收到 BOOT_COMPLETED。
+            exported=false：两 action 均为系统受保护广播，仅系统可投递，无需对外导出。
+        -->
+        <receiver
+            android:name=".core.vendor.BootCompletedReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -134,6 +149,12 @@
     <!-- REQUEST_INSTALL_PACKAGES：仅用于 UpdateManager 从 GitHub Releases 下载 APK 自更新 -->
     <!-- 仅在需要自更新功能时保留；如通过应用商店分发可移除 -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
+    <!-- 厂商适配（小米 MIUI/HyperOS 等）：开机自启动 + 电池优化白名单 -->
+    <!-- RECEIVE_BOOT_COMPLETED：BootCompletedReceiver 开机恢复 Agent 连接 -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- REQUEST_IGNORE_BATTERY_OPTIMIZATIONS：申请 Doze 白名单（MiuiKeepAliveHelper） -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
 </manifest>

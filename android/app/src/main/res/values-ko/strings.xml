@@ -176,6 +176,17 @@
     <string name="perf_total_messages">메시지 총수</string>
     <string name="perf_uptime">가동 시간</string>
 
+    <!-- Vendor keep-alive (MIUI/HyperOS adaptation) -->
+    <string name="vendor_keepalive_title">벤더 백그라운드 최적화</string>
+    <string name="vendor_keepalive_desc">MIUI/HyperOS는 백그라운드 관리가 엄격하여 연결 유지를 위해 아래 설정이 필요합니다</string>
+    <string name="vendor_battery_title">배터리 최적화</string>
+    <string name="vendor_battery_ok">배터리 최적화 제외 목록에 추가됨</string>
+    <string name="vendor_battery_limited">배터리 최적화로 제한됨 — 탭하여 수정</string>
+    <string name="vendor_autostart_title">자동 시작</string>
+    <string name="vendor_autostart_desc">시스템 설정에서 이 앱의 자동 시작을 허용하면 재시작 후 자동으로 연결이 복구됩니다</string>
+    <string name="vendor_power_title">절전 정책</string>
+    <string name="vendor_power_desc">앱 정보에서 백그라운드 절전 정책을 「제한 없음」으로 설정하세요</string>
+
     <!-- Accessibility -->
     <string name="a11y_send_message">메시지 보내기</string>
     <string name="a11y_stop_generation">생성 중지</string>

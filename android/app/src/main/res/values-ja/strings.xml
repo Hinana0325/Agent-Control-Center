@@ -176,6 +176,17 @@
     <string name="perf_total_messages">メッセージ総数</string>
     <string name="perf_uptime">稼働時間</string>
 
+    <!-- Vendor keep-alive (MIUI/HyperOS adaptation) -->
+    <string name="vendor_keepalive_title">ベンダー常駐最適化</string>
+    <string name="vendor_keepalive_desc">MIUI/HyperOS はバックグラウンド管理が厳しいため、接続維持には以下の設定が必要です</string>
+    <string name="vendor_battery_title">電池最適化</string>
+    <string name="vendor_battery_ok">電池最適化の除外リストに追加済み</string>
+    <string name="vendor_battery_limited">電池最適化により制限中 — タップで修正</string>
+    <string name="vendor_autostart_title">自動起動</string>
+    <string name="vendor_autostart_desc">システム設定でこのアプリの自動起動を許可すると、再起動後に自動復旧します</string>
+    <string name="vendor_power_title">省電力ポリシー</string>
+    <string name="vendor_power_desc">アプリ情報でバックグラウンドの省電力ポリシーを「制限なし」に設定してください</string>
+
     <!-- Accessibility -->
     <string name="a11y_send_message">メッセージを送信</string>
     <string name="a11y_stop_generation">生成を停止</string>

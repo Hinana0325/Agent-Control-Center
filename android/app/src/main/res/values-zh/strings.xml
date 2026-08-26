@@ -189,6 +189,17 @@
     <string name="perf_total_messages">消息总数</string>
     <string name="perf_uptime">运行时间</string>
 
+    <!-- Vendor keep-alive (MIUI/HyperOS adaptation) -->
+    <string name="vendor_keepalive_title">厂商保活优化</string>
+    <string name="vendor_keepalive_desc">MIUI/HyperOS 等系统对后台管控严格，需完成以下设置才能保持智能体连接</string>
+    <string name="vendor_battery_title">电池优化</string>
+    <string name="vendor_battery_ok">已加入电池优化白名单</string>
+    <string name="vendor_battery_limited">受电池优化限制 — 点击修复</string>
+    <string name="vendor_autostart_title">自启动</string>
+    <string name="vendor_autostart_desc">在系统设置中允许本应用自启动，重启后自动恢复连接</string>
+    <string name="vendor_power_title">省电策略</string>
+    <string name="vendor_power_desc">在应用信息中将省电策略设为「无限制」</string>
+
     <!-- Accessibility -->
     <string name="a11y_send_message">发送消息</string>
     <string name="a11y_stop_generation">停止生成</string>
