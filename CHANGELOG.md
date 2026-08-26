@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.2.0] - 2026-08-26
+
+### 六端架构 — 桌面三端（Windows / macOS / Linux）
+
+在 Android/iOS/HarmonyOS 三移动原生端之上新增桌面端：**Kotlin + Compose Multiplatform Desktop 1.12**，一套代码打包三平台（`desktop/` 独立 Gradle 工程）。与 Android 端同语言同栈（Kotlin 2.4.10 + Ktor 3 + Gson），协议层逐字段对齐。
+
+#### 桌面端（新增 `desktop/`）
+
+- **协议层移植**：AgentConfig/AgentType(8)/AgentProtocol/Agent/ConnectionState/Message/Session/AppErrorCode(37)——与移动端逐字段对齐。
+- **传输层移植**：`WebSocketTransport`（鉴权帧 + 指数退避重连 + 30s 心跳 + 抖动）与 `OpenAIHttpTransport`（SSE 逐行流式 + 非 SSE 回退 + 20 条滑动窗口历史 + 5xx/网络异常指数退避重试）逐逻辑移植；`TransportFactory` 按 AgentType 路由（ComfyUI 桌面 v1 优雅降级，见 roadmap）。
+- **安全层移植**：`UrlValidator`（SSRF 防护：云 metadata/CGNAT/组播/保留段拦截，本地端点放行）+ `CryptoManager`（E2E `AH1:` 格式 AES-256-GCM + PBKDF2 600000 轮，与移动端互操作，口令热更新）。
+- **UI**：NavigationRail 三主入口（Chat/Agents/Settings）；会话侧栏 + 消息流式气泡 + Enter 发送；Agent 配置卡片与编辑对话框（8 类型下拉）；深/浅主题、en/zh 双语、底部连接状态栏（延迟/服务器）。
+- **平台特性**：系统托盘（Show/Quit + close-to-tray 可关）、`~/.agent-control-center/` JSON 文件持久化（原子写入 + 损坏回退空态）。
+- **测试**：23 个 JVM 单测（协议契约 8 + 安全 10 + 持久化 5），本地全过。
+- **打包与 CI**：jpackage 配置 Msi/Dmg/Deb 三格式（Linux 本地已验证自包含镜像 182MB，deb 需 fakeroot 由 CI 提供）；`build-desktop.yml` 三 OS 矩阵测试 + 打包 + Tag 发布。
+
+#### Fixed（跨端同步）
+
+- **`UrlValidator` ws/wss scheme 误杀（Android + Desktop）**：JVM 的 `java.net.URL` 未注册 ws/wss 协议 handler，`validate("ws://…")` 一律抛 MalformedURLException 返回 null——WebSocketTransport 的 SSRF 校验会把**所有 WebSocket URL** 误判为「blocked URL」导致无法连接。修复：解析前规范化 ws/wss → http/https 等价形式（scheme 白名单仍按原值校验）。桌面端测试覆盖 ws:// 通过。
+
+#### 文档
+
+- **README.md**：六端化（架构图 + 技术栈四列对照 + 项目结构 + 构建运行 + CI 清单）。
+- **desktop/README.md**（新增）：桌面端架构、设计取舍、路线图。
+
 ## [5.1.0] - 2026-08-26
 
 ### 三原生架构 + 厂商适配 — HarmonyOS 第三原生端 & 金标联盟四厂商系统特性

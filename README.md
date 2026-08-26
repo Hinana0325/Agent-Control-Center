@@ -1,44 +1,44 @@
-# Agent Control Center v5.1.0
+# Agent Control Center v5.2.0
 
-**三原生多 Agent 移动端控制中心** —— Android（Kotlin + Jetpack Compose）、iOS（Swift + SwiftUI）、HarmonyOS（ArkTS + ArkUI）三原生实现，共享永久统一协议层，连接并远程操控多种 AI Agent（Hermes / OpenCode / OpenAI 兼容 / ComfyUI / 本地模型）。
+**多端多 Agent 控制中心** —— Android（Kotlin + Jetpack Compose）、iOS（Swift + SwiftUI）、HarmonyOS（ArkTS + ArkUI）三移动原生端 + Windows/macOS/Linux 桌面端（Kotlin + Compose Multiplatform），共享永久统一协议层，连接并远程操控多种 AI Agent（Hermes / OpenCode / OpenAI 兼容 / ComfyUI / 本地模型）。
 
-> 项目已从早期 PWA + Capacitor 架构完全重构为原生应用（v4.x 双端 → v5.x 三端）。旧版说明见 [`docs/legacy-pwa.md`](docs/legacy-pwa.md)。
+> 项目已从早期 PWA + Capacitor 架构完全重构为原生应用（v4.x 双端 → v5.x 三端 → v5.2 六端）。旧版说明见 [`docs/legacy-pwa.md`](docs/legacy-pwa.md)。
 
 ---
 
 ## 架构总览
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                       Protocol Layer                          │
-│     11 JSON Schema + 5 Transport Protocol (三端共享)          │
-│     android/ ←  ios/  ←  harmony/  ←  protocol/ (单一事实来源) │
-├──────────────────────┬──────────────────┬────────────────────┤
-│   Android (Kotlin)   │   iOS (Swift)    │  HarmonyOS (ArkTS) │
-│   Jetpack Compose     │   SwiftUI        │  ArkUI             │
-│   Hilt + Coroutines   │   @Observable    │  HSP 多模块        │
-│   Room + DataStore    │   SwiftData      │  relationalStore   │
-│   Ktor + OkHttp       │   URLSession    │  @ohos.net.http    │
-│   Android Keystore    │   CryptoKit      │  HUKS + cryptoFramework │
-└──────────────────────┴──────────────────┴────────────────────┘
+┌───────────────────────────────────────────────────────────────────────────┐
+│                              Protocol Layer                                │
+│        11 JSON Schema + 5 Transport Protocol (六端共享)                     │
+│  android/ ← ios/ ← harmony/ ← desktop/ ← protocol/ (单一事实来源)          │
+├───────────────────┬──────────────────┬─────────────────┬─────────────────┤
+│  Android (Kotlin) │   iOS (Swift)    │ HarmonyOS(ArkTS) │ Desktop (Kotlin)│
+│  Jetpack Compose  │   SwiftUI        │  ArkUI           │  Compose MP      │
+│  Hilt+Coroutines  │   @Observable    │  HSP 多模块      │  AppStore 状态流 │
+│  Room + DataStore │   SwiftData      │  relationalStore │  JSON 文件存储   │
+│  Ktor + OkHttp    │   URLSession     │  @ohos.net.http  │  Ktor + OkHttp   │
+│  Android Keystore │   CryptoKit      │  HUKS+cryptoFW   │  javax.crypto    │
+└───────────────────┴──────────────────┴─────────────────┴─────────────────┘
 ```
 
 ## 技术栈
 
-| 层 | Android | iOS | HarmonyOS |
-|:---|:---|:---|:---|
-| 语言 | Kotlin 2.4.10 | Swift 6.0 | ArkTS |
-| UI | Jetpack Compose (Material 3) | SwiftUI | ArkUI (声明式) |
-| 架构 | MVVM + StateFlow | MVVM + @Observable | MVVM + @State 回调 |
-| 异步 | Coroutines + Flow | async/await + AsyncStream | Promise/async-await |
-| 网络 | Ktor (HTTP/SSE/WS) | URLSession + WebSocketTask | @ohos.net.http/webSocket |
-| 持久化 | Room + DataStore | SwiftData + UserDefaults | relationalStore + preferences |
-| 加密 | Android Keystore (AES-256-GCM) | CryptoKit (AES-256-GCM) | HUKS + cryptoFramework |
-| DI | Hilt | 手动构造注入 | HSP 模块导入 |
-| 模块化 | 单 app 多包 | 单 target 分目录 | 多 HSP（common + 8 features） |
-| 最低版本 | minSdk 24 | iOS 18.0 | HarmonyOS NEXT (API 12+) |
+| 层 | Android | iOS | HarmonyOS | Desktop (Win/Mac/Linux) |
+|:---|:---|:---|:---|:---|
+| 语言 | Kotlin 2.4.10 | Swift 6.0 | ArkTS | Kotlin 2.4.10 |
+| UI | Jetpack Compose (Material 3) | SwiftUI | ArkUI (声明式) | Compose Multiplatform 1.12 (Material 3) |
+| 架构 | MVVM + StateFlow | MVVM + @Observable | MVVM + @State 回调 | AppStore 单仓状态流 |
+| 异步 | Coroutines + Flow | async/await + AsyncStream | Promise/async-await | Coroutines + Flow |
+| 网络 | Ktor (HTTP/SSE/WS) | URLSession + WebSocketTask | @ohos.net.http/webSocket | Ktor + OkHttp 引擎（与 Android 同栈） |
+| 持久化 | Room + DataStore | SwiftData + UserDefaults | relationalStore + preferences | JSON 文件存储（kotlinx-serialization） |
+| 加密 | Android Keystore (AES-256-GCM) | CryptoKit (AES-256-GCM) | HUKS + cryptoFramework | javax.crypto (AES-256-GCM, AH1:) |
+| DI | Hilt | 手动构造注入 | HSP 模块导入 | 构造注入 |
+| 模块化 | 单 app 多包 | 单 target 分目录 | 多 HSP（common + 8 features） | 单模块分包 |
+| 最低版本 | minSdk 24 | iOS 18.0 | HarmonyOS NEXT (API 12+) | JDK 17+ |
 
-## 协议层（三端共享）
+## 协议层（六端共享）
 
 | 模块 | 文件 |
 |:---|:---|
@@ -126,6 +126,15 @@ agent-control-center/
 │   ├── features/                # 8 feature HSP（chat/agents/activity/marketplace/settings/workflow/mcp/compare）
 │   ├── entry/                   # entry HAP（主壳 + FormKit 服务卡片）
 │   └── oh-package.json5
+├── desktop/                     # 桌面三端 Windows/macOS/Linux (Kotlin + Compose Multiplatform)
+│   └── src/main/kotlin/com/agentcontrolcenter/desktop/
+│       ├── agent/model/         # 协议层（AgentConfig/AgentType/AgentProtocol/Agent）
+│       ├── core/security/       # UrlValidator(SSRF 防护) + CryptoManager(E2E AH1:)
+│       ├── data/model/          # Message/Session
+│       ├── data/persistence/    # JsonStore（JSON 文件存储）
+│       ├── transport/           # WebSocketTransport + OpenAIHttpTransport + TransportFactory
+│       ├── app/                 # AppStore 状态编排 + Strings(en/zh)
+│       └── ui/                  # AppRoot + ChatPane/AgentsPane/SettingsPane + Theme
 ├── docs/                        # 项目文档
 │   ├── architecture.md          # 架构详解
 │   ├── vendor-adaptation.md     # 厂商适配（四厂商保活 + 公平内存机制）
@@ -154,7 +163,8 @@ agent-control-center/
 - 📤 **系统分享**：接收外部分享文本一键发问
 - 🔐 **E2E 加密**：三端 `AH1:` 格式，PBKDF2 600000 轮
 - 🏭 **厂商适配**：金标联盟四厂商（小米/华为荣耀/OPPO/vivo）后台保活引导 + 公平运行内存机制
-- 🌐 **本地化**：Android 四语（en/zh/ja/ko）/ HarmonyOS 四语（base/zh_CN/en_US/ja_JP）
+- 🌐 **本地化**：Android 四语（en/zh/ja/ko）/ HarmonyOS 四语（base/zh_CN/en_US/ja_JP）/ 桌面双语（en/zh）
+- 🖥️ **桌面三端**：Windows / macOS / Linux 一套 Compose Multiplatform 代码（系统托盘、close-to-tray、流式聊天、E2E 加密与移动端互操作）
 
 ### 厂商适配（Android）
 
@@ -216,6 +226,23 @@ hvigorw assembleHap --mode project -p product=default -p buildMode=release --no-
 
 模块结构：`common` HSP（协议/传输/安全/持久化/运行时）+ 8 个 `features/*` HSP（chat/agents/activity/marketplace/settings/workflow/mcp/compare）+ `entry` HAP。
 
+### Desktop（Windows / macOS / Linux）
+
+```bash
+# 开发运行（当前平台）
+cd desktop && ./gradlew run
+
+# 单元测试（23 个 JVM 测试）
+cd desktop && ./gradlew test
+
+# 当前平台安装包（Windows→msi / macOS→dmg / Linux→deb）
+cd desktop && ./gradlew packageDistributionForCurrentOS
+```
+
+最低要求 JDK 17+（打包用 jpackage，Linux deb 需系统安装 `fakeroot`）。数据目录：`~/.agent-control-center/`。
+
+详见 [`desktop/README.md`](desktop/README.md)。
+
 ---
 
 ## CI/CD
@@ -224,6 +251,7 @@ GitHub Actions：
 - `.github/workflows/build-apk.yml` — Push to `main`：自动构建 Debug APK + 单元测试；Tag `v*`：构建 Release APK + 上传到 GitHub Releases
 - `.github/workflows/build-ios.yml` — iOS 构建 + 单元测试；Tag `v*`：IPA 上传至同一 Release
 - `.github/workflows/build-harmony.yml` — 鸿蒙 HAP 编译（需 `self-hosted harmony-ci` runner，工具链需华为开发者账号下载）；Tag `v*`：HAP 上传至同一 Release
+- `.github/workflows/build-desktop.yml` — 桌面三端矩阵（windows/macos/ubuntu）测试 + 打包；Tag `v*`：msi/dmg/deb 上传至同一 Release
 
 ---
 

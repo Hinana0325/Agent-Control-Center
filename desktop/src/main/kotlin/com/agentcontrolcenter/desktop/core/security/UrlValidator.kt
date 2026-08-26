@@ -1,23 +1,13 @@
-package com.agentcontrolcenter.app.core.security
+package com.agentcontrolcenter.desktop.core.security
 
 import java.net.URL
 
-// MARK: - UrlValidator
-// 对应 iOS Security/URLValidator.swift
-// 防止用户输入危险 URL 触发 SSRF / apiKey 泄漏
-
 /**
- * URL 安全校验器。
+ * URL 安全校验器 — 与 Android/iOS 端 `UrlValidator` / `URLValidator` 完全对齐。
  *
- * 用于校验用户配置的 Agent endpoint / WebSocket URL / MCP transport URL，
- * 防止 SSRF（如 `http://169.254.169.254/...` 探活 AWS metadata 泄漏 apiKey）、
- * 本地端口扫描、内网穿透、危险 scheme（file:// / data://）等。
- *
- * 与 iOS `URLValidator` 完全对齐，跨端行为一致。
- *
- * H-S1 修复：原 Android 端无任何 URLValidator 等价组件，OpenAIHttpTransport 与
- * WebSocketTransport 直接使用 config.serverUrl 拼接路径并发起请求，且在 Authorization
- * 头中携带 apiKey。攻击者控制 Agent 配置即可触发 SSRF。
+ * 防止用户输入危险 URL 触发 SSRF（如 `http://169.254.169.254/...` 探活
+ * 云 metadata 泄漏 apiKey）、危险 scheme（file:// / data://）等。
+ * 纯 JVM 实现（java.net.URL），桌面三平台行为一致。
  */
 object UrlValidator {
 
@@ -25,31 +15,30 @@ object UrlValidator {
     val allowedSchemes: Set<String> = setOf("http", "https", "ws", "wss")
 
     /**
-     * 禁止访问的 IP 段（链路本地 / 元数据服务 / 回环陷阱等）。
-     * 注意：127.0.0.1 / localhost 允许（本地 Agent 部署场景）
+     * 禁止访问的 IP 段（链路本地 / 元数据服务 / 广播 / CGNAT 等）。
+     * 注意：127.0.0.1 / localhost 允许（本地 Agent 部署场景）。
      */
     private val blockedCIDRs: List<Pair<ByteArray, Int>> = listOf(
-        byteArrayOf(169.toByte(), 254.toByte(), 0.toByte(), 0.toByte()) to 16,  // 链路本地（含 AWS/GCP/Azure metadata）
-        byteArrayOf(0.toByte(), 0.toByte(), 0.toByte(), 0.toByte()) to 8,       // 本网络
+        byteArrayOf(169.toByte(), 254.toByte(), 0.toByte(), 0.toByte()) to 16,    // 链路本地（含 AWS/GCP/Azure metadata）
+        byteArrayOf(0.toByte(), 0.toByte(), 0.toByte(), 0.toByte()) to 8,        // 本网络
         byteArrayOf(255.toByte(), 255.toByte(), 255.toByte(), 255.toByte()) to 32, // 广播
-        byteArrayOf(100.toByte(), 64.toByte(), 0.toByte(), 0.toByte()) to 10,   // CGNAT
-        byteArrayOf(192.toByte(), 0.toByte(), 0.toByte(), 0.toByte()) to 24,    // IETF 协议分配
-        byteArrayOf(198.toByte(), 18.toByte(), 0.toByte(), 0.toByte()) to 15,   // 基准测试
-        byteArrayOf(224.toByte(), 0.toByte(), 0.toByte(), 0.toByte()) to 4,     // 组播
-        byteArrayOf(240.toByte(), 0.toByte(), 0.toByte(), 0.toByte()) to 4      // 保留
+        byteArrayOf(100.toByte(), 64.toByte(), 0.toByte(), 0.toByte()) to 10,    // CGNAT
+        byteArrayOf(192.toByte(), 0.toByte(), 0.toByte(), 0.toByte()) to 24,     // IETF 协议分配
+        byteArrayOf(198.toByte(), 18.toByte(), 0.toByte(), 0.toByte()) to 15,    // 基准测试
+        byteArrayOf(224.toByte(), 0.toByte(), 0.toByte(), 0.toByte()) to 4,      // 组播
+        byteArrayOf(240.toByte(), 0.toByte(), 0.toByte(), 0.toByte()) to 4       // 保留
     )
 
     /**
      * 校验 URL 字符串是否安全可用。
      *
-     * @param urlString 用户输入的 URL 字符串
-     * @param allowLocalhost 是否允许 localhost / 127.0.0.1 / 内网私网地址（默认 true，本地 Agent 部署需要）
+     * @param allowLocalhost 是否允许 localhost / 127.0.0.1 / 内网私网地址（默认 true，
+     *   本地 Agent / Ollama 部署需要）
      * @return 校验通过返回 URL；失败返回 null
      */
     fun validate(urlString: String, allowLocalhost: Boolean = true): URL? {
         // JVM 的 java.net.URL 未注册 ws/wss 协议 handler（MalformedURLException），
-        // 解析前规范化为 http/https 等价形式（scheme 白名单仍按原值校验）。
-        // 修复：此前 ws:// 一律返回 null，WebSocketTransport 连接被误判为「blocked URL」。
+        // 解析前规范化为 http/https 等价形式（scheme 白名单仍按原值校验）
         val normalizable = urlString.trim()
         val parseable = when {
             normalizable.startsWith("ws://", ignoreCase = true) ->
@@ -97,7 +86,7 @@ object UrlValidator {
             return url
         }
 
-        // 域名校验：禁止 .local / .internal（mDNS SSRF）
+        // 域名校验：.local / .internal（mDNS SSRF）
         if (host.endsWith(".local") || host.endsWith(".internal")) {
             return if (allowLocalhost) url else null
         }
@@ -120,14 +109,11 @@ object UrlValidator {
     }
 
     private fun isIPv4Allowed(ip: ByteArray, allowLocalhost: Boolean): Boolean {
-        // 127.0.0.0/8 回环
-        if (ip[0] == 127.toByte()) return allowLocalhost
-        // 私网地址
-        if (ip[0] == 10.toByte()) return allowLocalhost
-        if (ip[0] == 172.toByte() && ip[1] in 16..31) return allowLocalhost
-        if (ip[0] == 192.toByte() && ip[1] == 168.toByte()) return allowLocalhost
+        if (ip[0] == 127.toByte()) return allowLocalhost          // 127.0.0.0/8 回环
+        if (ip[0] == 10.toByte()) return allowLocalhost           // 10.0.0.0/8 私网
+        if (ip[0] == 172.toByte() && ip[1] in 16..31) return allowLocalhost // 172.16/12
+        if (ip[0] == 192.toByte() && ip[1] == 168.toByte()) return allowLocalhost // 192.168/16
 
-        // 禁止的 IP 段
         for ((cidr, prefix) in blockedCIDRs) {
             if (inCIDR(ip, cidr, prefix)) return false
         }
