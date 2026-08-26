@@ -108,22 +108,120 @@ class VendorRomAdapterTest {
             readProp = { null }
         )
         assertFalse(info.isXiaomi)
+        assertFalse(info.isManagedVendor)
         assertEquals(VendorRom.Other, info.rom)
         assertNull(info.miuiVersion)
         assertNull(info.hyperOsVersion)
         assertEquals("Standard", info.romLabel)
     }
 
+    // ── 华为/荣耀系（Honor）检测 ──
+
     @Test
-    fun `detect similar sounding brand does not match`() {
-        // "xiaomii" / "notredmi" 等包含关键词的拼接串按 contains 会误报 —— 但
-        // 真实 MANUFACTURER 不存在此类值，此处验证大小写归一后的常规负例
+    fun `detect honor brand returns Honor`() {
         val info = VendorRomAdapter.detect(
-            manufacturer = "Huawei",
+            manufacturer = "HONOR",
+            brand = "honor",
+            readProp = { null }
+        )
+        assertEquals(VendorRom.Honor, info.rom)
+        assertTrue(info.isManagedVendor)
+        assertFalse(info.isXiaomi)
+    }
+
+    @Test
+    fun `detect huawei brand returns Honor`() {
+        val info = VendorRomAdapter.detect(
+            manufacturer = "HUAWEI",
             brand = "HUAWEI",
             readProp = { null }
         )
-        assertFalse(info.isXiaomi)
+        assertEquals(VendorRom.Honor, info.rom)
+        assertTrue(info.isManagedVendor)
+    }
+
+    @Test
+    fun `detect hihonor brand returns Honor`() {
+        // 荣耀独立后新机型品牌为 hihonor
+        val info = VendorRomAdapter.detect(
+            manufacturer = "hihonor",
+            brand = "HIHONOR",
+            readProp = { null }
+        )
+        assertEquals(VendorRom.Honor, info.rom)
+    }
+
+    // ── OPPO 系检测 ──
+
+    @Test
+    fun `detect oppo brand returns Oppo`() {
+        val info = VendorRomAdapter.detect(
+            manufacturer = "OPPO",
+            brand = "OPPO",
+            readProp = { null }
+        )
+        assertEquals(VendorRom.Oppo, info.rom)
+        assertTrue(info.isManagedVendor)
+    }
+
+    @Test
+    fun `detect oneplus brand returns Oppo`() {
+        // 一加国内版采用 ColorOS
+        val info = VendorRomAdapter.detect(
+            manufacturer = "OnePlus",
+            brand = "OnePlus",
+            readProp = { null }
+        )
+        assertEquals(VendorRom.Oppo, info.rom)
+    }
+
+    @Test
+    fun `detect realme brand returns Oppo`() {
+        // realme 为 OPPO 子品牌（ColorOS 系）
+        val info = VendorRomAdapter.detect(
+            manufacturer = "realme",
+            brand = "realme",
+            readProp = { null }
+        )
+        assertEquals(VendorRom.Oppo, info.rom)
+    }
+
+    // ── vivo 系检测 ──
+
+    @Test
+    fun `detect vivo brand returns Vivo`() {
+        val info = VendorRomAdapter.detect(
+            manufacturer = "vivo",
+            brand = "vivo",
+            readProp = { null }
+        )
+        assertEquals(VendorRom.Vivo, info.rom)
+        assertTrue(info.isManagedVendor)
+    }
+
+    @Test
+    fun `detect iqoo brand returns Vivo`() {
+        // iQOO 为 vivo 子品牌（OriginOS 系）
+        val info = VendorRomAdapter.detect(
+            manufacturer = "iQOO",
+            brand = "IQOO",
+            readProp = { null }
+        )
+        assertEquals(VendorRom.Vivo, info.rom)
+    }
+
+    // ── romLabel 展示 ──
+
+    @Test
+    fun `romLabel uses displayName for non-xiaomi managed vendors`() {
+        val honor = VendorRomAdapter.detect("HONOR", "honor") { null }
+        assertEquals("Huawei/Honor HarmonyOS", honor.romLabel)
+
+        val oppo = VendorRomAdapter.detect("OPPO", "OPPO") { null }
+        assertEquals("OPPO ColorOS", oppo.romLabel)
+
+        val vivo = VendorRomAdapter.detect("vivo", "vivo") { null }
+        assertEquals("vivo OriginOS", vivo.romLabel)
     }
 
     // ── 反射读取系统属性 ──

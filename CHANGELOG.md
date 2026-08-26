@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.1.0] - 2026-08-26
 
-### 三原生架构 + 厂商适配 — HarmonyOS 第三原生端 & 小米系系统特性
+### 三原生架构 + 厂商适配 — HarmonyOS 第三原生端 & 金标联盟四厂商系统特性
 
-从 v4.x 双端（Android/iOS）扩展为三端（Android/iOS/HarmonyOS NEXT），共享协议层不变；Android 端新增国产 ROM 厂商适配体系（小米保活引导 + 金标联盟公平运行内存机制）。
+从 v4.x 双端（Android/iOS）扩展为三端（Android/iOS/HarmonyOS NEXT），共享协议层不变；Android 端新增国产 ROM 厂商适配体系（金标联盟四厂商保活引导 + 公平运行内存机制 + 内存占用优化）。
 
 #### HarmonyOS 第三原生端（新增 `harmony/`）
 
@@ -20,11 +20,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **平台特性（H5）**：`KeepAliveManager` 后台保活（DATA_TRANSFER 长时任务）、FormKit 服务卡片（2x2 竖版 + 2x4 宽版双布局 + formId 注册表 + 应用侧主动推送）、四语本地化（base/zh_CN/en_US/ja_JP）。
 - **CI**：`.github/workflows/build-harmony.yml`（self-hosted harmony-ci runner）。
 
-#### 厂商适配 — 小米 HyperOS/MIUI（新增 `core/vendor/`）
+#### 厂商适配 — 金标联盟四厂商（新增 `core/vendor/`）
 
-- **`VendorRomAdapter`**：ROM 厂商双信号检测（品牌关键词 + `ro.miui.ui.version.name`/`ro.mi.os.version.name` 系统属性反射读取）。
-- **`MiuiKeepAliveHelper`**：电池优化白名单申请（标准 PowerManager API）+ MIUI 自启动管理页跳转（3 候选 Activity + 应用详情页兜底）+ 省电策略引导；设置 → 性能 → 厂商保活优化区块（仅小米设备渲染，ON_RESUME 刷新白名单状态），strings 四语。
+- **`VendorRomAdapter`**：四厂商 ROM 检测（品牌关键词分组含子品牌——xiaomi/redmi/poco、huawei/honor/hihonor、oppo/oneplus/realme、vivo/iqoo；小米系另有 `ro.miui.ui.version.name`/`ro.mi.os.version.name` 系统属性反射兜底）。
+- **`VendorKeepAliveHelper`**：电池优化白名单申请（标准 PowerManager API）+ 按 ROM 分发自启动管理页跳转（四厂商共 11 候选 Activity，逐候选 resolveActivity 探测 + 应用详情页兜底）+ 省电策略引导；设置 → 性能 → 厂商保活优化区块（四厂商设备渲染，ON_RESUME 刷新白名单状态），strings 四语。
 - **`BootCompletedReceiver`**：开机/应用更新后恢复 Agent 连接（仅已配置用户，克制不打扰）。
+
+#### 内存占用优化（公平内存机制的应用侧配合）
+
+- **消息列表投影 `MessageListItem`**：`getMessagesBySession` Room Flow 由 `SELECT *` 改为显式列投影，排除 `attachmentData`（MB 级 Base64 字符串，消息 UI 零消费）——长会话 + 带附件场景常驻内存显著下降；备份导出走独立全量查询（`getMessagesBySessionOnce`），附件数据不丢失。
+- **Insights 统计投影 `MessageStat`**：`DataInsightsManager.generateInsights` 由全表 `SELECT *` 载入改为三列投影（role/content/timestamp），消除统计聚合瞬时内存峰值。
+- **`messages` 表新增 `timestamp`/`role` 单列索引**（DB v10→v11 migration），服务 `getLastMessage` 排序与统计查询。
+- **`ChatViewModel.MAX_ATTACHMENT_BYTES`** 附件大小上限提取为命名常量（10MB，与 `AppErrorCode.FILE_TOO_LARGE` 对齐）。
 
 #### 公平运行内存机制（金标联盟统一规范）
 
@@ -35,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### 文档
 
 - **README.md**：更新为三端架构总览（技术栈三方对照表/11 Schema/8 AgentType/项目结构含 harmony 与 core/vendor）。
-- **docs/vendor-adaptation.md**（新增）：厂商适配指南（小米保活三重管控 + 公平内存广播契约/回调协议/释放策略/验证方法/四家厂商官方文档链接）。
+- **docs/vendor-adaptation.md**（新增）：厂商适配指南（四厂商保活三重管控 + 各厂商自启动跳转候选 + 公平内存广播契约/回调协议/释放策略 + 内存投影瘦身 + 验证方法/四家厂商官方文档链接）。
 
 #### Fixed
 

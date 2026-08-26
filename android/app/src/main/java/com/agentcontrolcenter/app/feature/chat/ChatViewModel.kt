@@ -114,6 +114,13 @@ class ChatViewModel @Inject constructor(
          * 使用固定 ID 可在流式过程中反复更新同一条通知，结束时按此 ID 取消。
          */
         private const val LIVE_UPDATE_NOTIFICATION_ID = 1001
+
+        /**
+         * 单附件大小上限（压缩前，字节）。
+         * 与 AppErrorCode.FILE_TOO_LARGE 的错误码描述文案保持一致；
+         * 超限时拒绝挂载（聊天消息 UI 不渲染附件内容，仅落库存档）。
+         */
+        private const val MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024
     }
 
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -1093,7 +1100,7 @@ class ChatViewModel @Inject constructor(
                         return@withContext "empty" to null
                     }
                     // Warn if attachment is very large
-                    if (bytes.size > 10 * 1024 * 1024) { // 10MB
+                    if (bytes.size > MAX_ATTACHMENT_BYTES) {
                         return@withContext "too_large" to null
                     }
                     val finalBytes = if (isImage && bytes.size > 1_000_000) {

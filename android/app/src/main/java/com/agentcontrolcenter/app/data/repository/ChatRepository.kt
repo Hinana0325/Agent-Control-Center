@@ -9,6 +9,7 @@ import com.agentcontrolcenter.app.core.database.dao.MessageDao
 import com.agentcontrolcenter.app.core.database.dao.SessionDao
 import com.agentcontrolcenter.app.core.database.entity.ActivityLogEntity
 import com.agentcontrolcenter.app.core.database.entity.AgentConfigEntity
+import com.agentcontrolcenter.app.core.database.dao.MessageListItem
 import com.agentcontrolcenter.app.core.database.entity.MessageEntity
 import com.agentcontrolcenter.app.core.database.entity.SessionEntity
 import com.agentcontrolcenter.app.agent.model.AgentConfig
@@ -107,7 +108,7 @@ class ChatRepository @javax.inject.Inject constructor(
     // ── Messages ──
 
     fun getMessagesBySession(sessionId: String): Flow<List<Message>> =
-        messageDao.getMessagesBySession(sessionId).map { entities -> entities.map { it.toModel() } }
+        messageDao.getMessagesBySession(sessionId).map { items -> items.map { it.toMessage() } }
             .flowOn(Dispatchers.IO)
 
     suspend fun getMessagesBySessionList(sessionId: String): List<Message> =
@@ -267,6 +268,27 @@ class ChatRepository @javax.inject.Inject constructor(
         metadataJson = metadataJson,
         attachmentType = attachmentType,
         attachmentData = attachmentData,
+        attachmentName = attachmentName,
+        reaction = reaction,
+        replyToId = replyToId
+    )
+
+    /**
+     * 轻量投影 → 领域模型（公平内存机制适配）。
+     *
+     * 投影不含 attachmentData（MB 级 Base64，消息 UI 零消费）；此处置 null，
+     * 附件完整数据仅备份导出路径（[getMessagesBySessionList] 全量查询）携带。
+     */
+    private fun MessageListItem.toMessage() = Message(
+        id = id,
+        sessionId = sessionId,
+        role = try { MessageRole.valueOf(role) } catch (_: Exception) { MessageRole.System },
+        content = content,
+        timestamp = timestamp,
+        status = try { MessageStatus.valueOf(status) } catch (_: Exception) { MessageStatus.Sent },
+        metadataJson = metadataJson,
+        attachmentType = attachmentType,
+        attachmentData = null,
         attachmentName = attachmentName,
         reaction = reaction,
         replyToId = replyToId

@@ -1,8 +1,8 @@
 package com.agentcontrolcenter.app.data.insights
 
 import com.agentcontrolcenter.app.core.database.dao.MessageDao
+import com.agentcontrolcenter.app.core.database.dao.MessageStat
 import com.agentcontrolcenter.app.core.database.dao.SessionDao
-import com.agentcontrolcenter.app.core.database.entity.MessageEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -13,6 +13,10 @@ import java.util.Locale
 /**
  * 数据洞察管理器
  * 从数据库中提取统计信息，生成使用洞察报告
+ *
+ * 公平内存机制适配：消息统计改用 [MessageStat] 轻量投影（仅 role/content/timestamp
+ * 三列），排除 attachmentData（MB 级 Base64）与 metadataJson 等大字段——
+ * 原实现 `SELECT *` 全表载入做内存聚合，附件列会把瞬时内存峰值放大一个数量级。
  */
 class DataInsightsManager(
     private val messageDao: MessageDao,
@@ -38,7 +42,7 @@ class DataInsightsManager(
 
     suspend fun generateInsights(): Insights {
         // Room suspend DAO 自身已切换到 Dispatchers.IO，无需在此包裹。
-        val messages = messageDao.getAllMessages()
+        val messages = messageDao.getAllMessagesForStats()
         val sessions = sessionDao.getAllSessionsForInsights()
         val messageCount = messageDao.getMessageCount()
         val sessionCount = sessionDao.getSessionCount()
@@ -67,7 +71,7 @@ class DataInsightsManager(
         }
     }
 
-    private fun calculateAvgResponseTime(messages: List<MessageEntity>): Long {
+    private fun calculateAvgResponseTime(messages: List<MessageStat>): Long {
         if (messages.size < 2) return 0L
         var totalTime = 0L
         var count = 0
@@ -82,7 +86,7 @@ class DataInsightsManager(
         return if (count > 0) totalTime / count else 0L
     }
 
-    private fun findMostActiveHour(messages: List<MessageEntity>): Int {
+    private fun findMostActiveHour(messages: List<MessageStat>): Int {
         if (messages.isEmpty()) return 0
         val hourMap = messages.groupBy { msg ->
             Calendar.getInstance().apply { timeInMillis = msg.timestamp }.get(Calendar.HOUR_OF_DAY)
@@ -100,7 +104,7 @@ class DataInsightsManager(
         return words.maxByOrNull { it.value }?.key?.replaceFirstChar { it.uppercase() } ?: "General"
     }
 
-    private fun groupByDay(messages: List<MessageEntity>): Map<String, Long> {
+    private fun groupByDay(messages: List<MessageStat>): Map<String, Long> {
         // Critical 4 修复：格式含年份 "yyyy-MM-dd"，避免跨年（如 2023-12-31 与 2024-12-31）
         // 被错误合并到同一组；使用局部 SimpleDateFormat 避免共享成员线程安全问题。
         val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
@@ -121,13 +125,13 @@ class DataInsightsManager(
             .toMap()
     }
 
-    private fun calculateAvgLength(messages: List<MessageEntity>): Int {
+    private fun calculateAvgLength(messages: List<MessageStat>): Int {
         if (messages.isEmpty()) return 0
         val totalLength = messages.sumOf { it.content.length }
         return totalLength / messages.size
     }
 
-    private fun calculateLongestStreak(messages: List<MessageEntity>): Int {
+    private fun calculateLongestStreak(messages: List<MessageStat>): Int {
         if (messages.isEmpty()) return 0
         val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
         val days = messages.map { sdf.format(Date(it.timestamp)) }.distinct().sorted()
@@ -156,7 +160,7 @@ class DataInsightsManager(
         return maxStreak
     }
 
-    private fun groupByHour(messages: List<MessageEntity>): Map<Int, Long> {
+    private fun groupByHour(messages: List<MessageStat>): Map<Int, Long> {
         val hourMap = mutableMapOf<Int, Long>()
         for (i in 0..23) hourMap[i] = 0L
         messages.forEach { msg ->

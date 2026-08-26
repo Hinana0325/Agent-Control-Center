@@ -25,42 +25,44 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.agentcontrolcenter.app.R
-import com.agentcontrolcenter.app.core.vendor.MiuiKeepAliveHelper
+import com.agentcontrolcenter.app.core.vendor.VendorKeepAliveHelper
 import com.agentcontrolcenter.app.core.vendor.VendorRomAdapter
 
 /**
- * 厂商保活优化区块 — 设置页「性能」分类的小米（MIUI/HyperOS）专属设置项。
+ * 厂商保活优化区块 — 设置页「性能」分类的国产 ROM（金标联盟四厂商）设置项。
  *
- * 背景：MIUI/HyperOS 默认关闭自启动、默认「智能限制后台运行」省电策略，
+ * 背景：MIUI/HyperOS（小米）、HarmonyOS（华为/荣耀）、ColorOS（OPPO）、
+ * OriginOS（vivo）默认关闭自启动、默认「智能限制后台运行」省电策略，
  * 前台服务 + START_STICKY 无法穿透这些厂商侧管控。本区块引导用户完成
  * 三项厂商设置（电池白名单 / 自启动 / 省电策略），使 Agent 后台长连接
  * 在这些 ROM 上可靠保活。
  *
- * 仅检测到小米系设备时渲染（VendorRomAdapter 双信号判定），其他设备返回空。
- * 电池白名单状态在从系统设置页返回（ON_RESUME）时自动刷新。
+ * 仅检测到四厂商设备时渲染（VendorRomAdapter 品牌关键词 + 小米系 ROM 属性
+ * 双信号判定），其他设备返回空。自启动跳转按 [com.agentcontrolcenter.app.core.vendor.VendorRom]
+ * 分发厂商专属入口。电池白名单状态在从系统设置页返回（ON_RESUME）时自动刷新。
  */
 @Composable
 internal fun VendorKeepAliveSection() {
     val context = LocalContext.current
     val romInfo = remember { VendorRomAdapter.detect() }
-    if (!romInfo.isXiaomi) return
+    if (!romInfo.isManagedVendor) return
 
     // 电池白名单状态：从系统设置页返回时刷新（ON_RESUME）
     var batteryExcluded by remember {
-        mutableStateOf(MiuiKeepAliveHelper.isIgnoringBatteryOptimizations(context))
+        mutableStateOf(VendorKeepAliveHelper.isIgnoringBatteryOptimizations(context))
     }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                batteryExcluded = MiuiKeepAliveHelper.isIgnoringBatteryOptimizations(context)
+                batteryExcluded = VendorKeepAliveHelper.isIgnoringBatteryOptimizations(context)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // 标题携带 ROM 标识（HyperOS OS1.0.3 / MIUI V14.0.5 / Xiaomi），便于用户确认机型
+    // 标题携带 ROM 标识（HyperOS OS1.0.3 / MIUI V14.0.5 / Xiaomi 等），便于用户确认机型
     val keepAliveTitle = stringResource(R.string.vendor_keepalive_title)
     SettingsHeader("$keepAliveTitle · ${romInfo.romLabel}")
 
@@ -81,16 +83,16 @@ internal fun VendorKeepAliveSection() {
             if (batteryExcluded) R.string.vendor_battery_ok else R.string.vendor_battery_limited
         ),
         icon = if (batteryExcluded) Icons.Default.BatteryFull else Icons.Default.BatteryAlert,
-        onClick = { MiuiKeepAliveHelper.requestIgnoreBatteryOptimizations(context) }
+        onClick = { VendorKeepAliveHelper.requestIgnoreBatteryOptimizations(context) }
     )
 
-    // 2. 自启动：跳转 MIUI 自启动管理页（多候选 + 应用详情页兜底）；
+    // 2. 自启动：按厂商跳转自启动管理页（多候选 + 应用详情页兜底）；
     //    自启动状态无公开 API 可查，始终可点（重复跳转无副作用）
     SettingsItem(
         title = stringResource(R.string.vendor_autostart_title),
         subtitle = stringResource(R.string.vendor_autostart_desc),
         icon = Icons.Default.PlayArrow,
-        onClick = { MiuiKeepAliveHelper.openAutoStartSettings(context) }
+        onClick = { VendorKeepAliveHelper.openAutoStartSettings(context, romInfo.rom) }
     )
 
     // 3. 省电策略：无公开 API，引导到本应用系统详情页手动改「无限制」
@@ -98,13 +100,13 @@ internal fun VendorKeepAliveSection() {
         title = stringResource(R.string.vendor_power_title),
         subtitle = stringResource(R.string.vendor_power_desc),
         icon = Icons.Default.Bolt,
-        onClick = { MiuiKeepAliveHelper.openAppDetailsSettings(context) }
+        onClick = { VendorKeepAliveHelper.openAppDetailsSettings(context) }
     )
 }
 
 /**
  * 厂商保活区块容器（LazyListScope 扩展）：
- * 非小米设备渲染空内容，保持调用方（settingsDetail）分支结构统一。
+ * 非四厂商设备渲染空内容，保持调用方（settingsDetail）分支结构统一。
  */
 @Composable
 internal fun VendorKeepAliveCard() {

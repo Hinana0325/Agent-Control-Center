@@ -8,7 +8,8 @@ import androidx.room.PrimaryKey
  * Phase 2.4: 添加 timestamp 和 role 单列索引。
  * - timestamp: getLastMessage 使用 ORDER BY timestamp DESC LIMIT 1（无 sessionId 过滤），
  *   复合索引 (sessionId, timestamp) 无法高效服务此查询。
- * - role: getAllAssistantMessages 使用 WHERE role = 'Assistant'，无索引时全表扫描。
+ * - role: getAllMessagesForStats 内存过滤 it.role == "User"/"Assistant"，
+ *   无索引时全表扫描。
  */
 @Entity(
     tableName = "messages",

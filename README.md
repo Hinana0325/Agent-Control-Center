@@ -93,7 +93,7 @@ agent-control-center/
 │   │   ├── MainActivity.kt
 │   │   ├── agent/               # Agent 模型（AgentType/协议/能力）
 │   │   ├── core/
-│   │   │   ├── vendor/          # 厂商适配（小米保活 + 公平内存）
+│   │   │   ├── vendor/          # 厂商适配（金标联盟四厂商保活 + 公平内存）
 │   │   │   ├── hardware/        # SoC 芯片检测与推理优化
 │   │   │   ├── security/        # Keystore + Crypto + UrlValidator
 │   │   │   ├── common/          # PerformanceMonitor 等
@@ -128,7 +128,7 @@ agent-control-center/
 │   └── oh-package.json5
 ├── docs/                        # 项目文档
 │   ├── architecture.md          # 架构详解
-│   ├── vendor-adaptation.md     # 厂商适配（小米保活 + 公平内存机制）
+│   ├── vendor-adaptation.md     # 厂商适配（四厂商保活 + 公平内存机制）
 │   ├── harmony-roadmap.md       # 鸿蒙端路线图
 │   └── ...
 ├── .github/workflows/           # CI/CD（Android/iOS/HarmonyOS 三流水线）
@@ -153,15 +153,16 @@ agent-control-center/
 - 🎨 **主题**：浅色 / 深色 / Liquid Glass 三套
 - 📤 **系统分享**：接收外部分享文本一键发问
 - 🔐 **E2E 加密**：三端 `AH1:` 格式，PBKDF2 600000 轮
-- 🏭 **厂商适配**：小米 HyperOS/MIUI 后台保活引导 + 金标联盟公平运行内存机制
+- 🏭 **厂商适配**：金标联盟四厂商（小米/华为荣耀/OPPO/vivo）后台保活引导 + 公平运行内存机制
 - 🌐 **本地化**：Android 四语（en/zh/ja/ko）/ HarmonyOS 四语（base/zh_CN/en_US/ja_JP）
 
 ### 厂商适配（Android）
 
 面向国产 ROM 的系统特性适配（详见 [`docs/vendor-adaptation.md`](docs/vendor-adaptation.md)）：
 
-- **小米保活引导**：MIUI/HyperOS 三重管控（自启动 / 省电策略 / 电池优化白名单）检测与设置跳转，设置 → 性能 → 厂商保活优化
+- **四厂商保活引导**：小米 MIUI/HyperOS、华为/荣耀、OPPO ColorOS、vivo OriginOS 三重管控（自启动 / 省电策略 / 电池优化白名单）检测与设置跳转，设置 → 性能 → 厂商保活优化
 - **公平运行内存机制**：金标联盟（vivo/小米/OPPO/荣耀）统一规范，响应 `itgsa.intent.action.TRIM/KILL` 广播并经 callback IBinder 回调（3s 超时）；标准 `onTrimMemory` 分级释放互补
+- **查询投影瘦身**：消息列表 / Insights 统计 Room 投影排除 `attachmentData` 大字段，降低常驻内存，减少触达公平内存预警线
 - **开机恢复**：`BOOT_COMPLETED` / `MY_PACKAGE_REPLACED` 拉起连接服务（仅已配置用户）
 
 ---
