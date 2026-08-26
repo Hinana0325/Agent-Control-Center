@@ -166,13 +166,31 @@ open AgentControlCenter.xcodeproj
 
 最低要求 macOS 14.0 + Xcode 16.0 + iOS 18.0 SDK。
 
+### HarmonyOS
+
+```bash
+# 安装依赖（工程与全部模块）
+cd harmony && ohpm install --all
+
+# 调试 HAP
+hvigorw assembleHap --mode project -p product=default -p buildMode=debug --no-daemon
+
+# 发布 HAP（需在 build-profile.json5 配置签名）
+hvigorw assembleHap --mode project -p product=default -p buildMode=release --no-daemon
+```
+
+用 DevEco Studio 打开 `harmony/` 目录即可开发；最低要求 HarmonyOS NEXT (API 12+) + Command Line Tools（含 hvigorw / ohpm / ohos-sdk）。
+
+模块结构：`common` HSP（协议/传输/安全/持久化/运行时）+ 8 个 `features/*` HSP（chat/agents/activity/marketplace/settings/workflow/mcp/compare）+ `entry` HAP。
+
 ---
 
 ## CI/CD
 
-GitHub Actions（`.github/workflows/build-apk.yml`）：
-- Push to `main`：自动构建 Debug APK + 单元测试
-- Tag `v*`：构建 Release APK + 上传到 GitHub Releases
+GitHub Actions：
+- `.github/workflows/build-apk.yml` — Push to `main`：自动构建 Debug APK + 单元测试；Tag `v*`：构建 Release APK + 上传到 GitHub Releases
+- `.github/workflows/build-ios.yml` — iOS 构建 + 单元测试；Tag `v*`：IPA 上传至同一 Release
+- `.github/workflows/build-harmony.yml` — 鸿蒙 HAP 编译（需 `self-hosted harmony-ci` runner，工具链需华为开发者账号下载）；Tag `v*`：HAP 上传至同一 Release
 
 ---
 

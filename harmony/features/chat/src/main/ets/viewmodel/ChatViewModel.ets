@@ -43,6 +43,9 @@ export class ChatViewModel {
   // 是否正在流式接收
   private isStreaming: boolean = false;
 
+  // 已连接 Agent 的显示名（供服务卡片同步）
+  private connectedAgentName: string = '';
+
   /**
    * 初始化：创建/加载会话，加载历史消息，注册事件监听器。
    */
@@ -131,6 +134,12 @@ export class ChatViewModel {
     };
 
     this.connectionRepo.connect(config, null);
+    this.connectedAgentName = configEntity.name;
+  }
+
+  /** 已连接 Agent 的显示名（未连接时为空串）。 */
+  getConnectedAgentName(): string {
+    return this.connectedAgentName;
   }
 
   /**

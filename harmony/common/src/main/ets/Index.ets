@@ -50,6 +50,9 @@ export * from './mcp/McpBridge';
 // ── Plugin 插件系统 ──
 export * from './plugin/PluginExecutor';
 
+// ── Widget 服务卡片数据桥 ──
+export * from './widget/CardDataProvider';
+
 // ── Theme 设计 token ──
 export * from './theme/Color';
 export * from './theme/Shape';

@@ -6,7 +6,7 @@
 import { AbilityConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
-import { AppDatabase, ConnectionRepository, KeepAliveManager } from 'common';
+import { AppDatabase, ConnectionRepository, KeepAliveManager, CardDataProvider } from 'common';
 
 const DOMAIN = 0xA001;
 const TAG = 'EntryAbility';
@@ -20,6 +20,13 @@ export default class EntryAbility extends UIAbility {
       hilog.info(DOMAIN, TAG, 'AppDatabase 初始化成功');
     } catch (e) {
       hilog.error(DOMAIN, TAG, `AppDatabase 初始化失败: ${e}`);
+    }
+    // H5 服务卡片数据桥初始化（FormKit 卡片读取连接状态/Agent 名）
+    try {
+      await CardDataProvider.init(this.context);
+      hilog.info(DOMAIN, TAG, 'CardDataProvider 初始化成功');
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, `CardDataProvider 初始化失败: ${e}`);
     }
   }
 

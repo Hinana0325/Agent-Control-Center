@@ -272,9 +272,9 @@ harmony/
 | H3 Chat MVP | ✅ 已完成 | `ChatViewModel` 集成传输 + 持久化，`ChatScreen` 消息列表 / 流式 SSE 渲染 / 输入栏 / 连接状态 / 错误提示；5 Tab 主壳 |
 | CI 流水线 | ✅ 已完成 | `.github/workflows/build-harmony.yml`：hvigor 编译 debug HAP + v* 标签 release HAP 上传至统一 GitHub Release。运行在 `self-hosted harmony-ci` runner（工具链需华为账号下载，hosted runner 不可用） |
 | H4 功能对齐（8 AgentType + 工作流 + MCP + 插件） | ✅ 已完成 | `ComfyUITransport` 文生图双模式（默认工作流 + JSON 直提交）补齐 8 AgentType 路由；`WorkflowEngine` BFS 拓扑 + 环检测 + 4 节点类型 + `workflow_runs` 落库 + 4 预置模板；MCP 三件套（`McpRegistry`/`McpClient` JSON-RPC 2.0/`McpBridge`）；`PluginExecutor` 三动作（HttpCall 敏感 header 过滤 / Broadcast commonEvent / Workflow 提示词）。`features/workflow` + `features/mcp` 页面接入 Agents Tab 次级入口（v5.1 IA 对齐） |
-| H5 平台特性（后台保活 + 卡片 + 语音 + 本地化） | 🔶 部分完成 | ✅ 后台保活：`KeepAliveManager`（backgroundTaskManager DATA_TRANSFER 长时任务，切后台且连接存在时申请，回前台释放；module.json5 配套 backgroundModes + KEEP_BACKGROUND_RUNNING 权限），对齐 Android AgentConnectionService 前台服务语义，系统常驻通知由长时任务机制生成。✅ 本地化：Chat/Workflow/MCP/Agents 四个 feature HSP 各建 base/zh_CN/ja_JP/en_US 四语 string.json，页面硬编码全部替换为 `$r()`（Span 拼接动态数字）。⏳ FormKit 服务卡片、语音输入/对话、端侧推理留待后续迭代 |
+| H5 平台特性（后台保活 + 卡片 + 语音 + 本地化） | 🔶 部分完成 | ✅ 后台保活：`KeepAliveManager`（backgroundTaskManager DATA_TRANSFER 长时任务，切后台且连接存在时申请，回前台释放；module.json5 配套 backgroundModes + KEEP_BACKGROUND_RUNNING 权限），对齐 Android AgentConnectionService 前台服务语义。✅ 本地化：Chat/Workflow/MCP/Agents 四个 feature HSP + entry 各建 base/zh_CN/ja_JP/en_US 四语 string.json，页面硬编码全部替换为 `$r()`（Span 拼接动态数字）。✅ 服务卡片：`QuickInputFormAbility`（FormExtensionAbility）+ `QuickInputCard`（2x2/2x4，显示连接状态/Agent 名/延迟，postCardAction router 拉起主应用）+ `CardDataProvider`（preferences 数据桥，Agent 名 HUKS 加密），对齐 Android Widget 快捷输入卡片语义（鸿蒙卡片不支持 TextInput，与 Android RemoteViews 降级一致——点击跳转主界面输入）。✅ README 鸿蒙构建说明补齐（构建命令 + 模块结构 + CI 说明）。⏳ 语音输入/对话、端侧推理留待后续迭代 |
 | H6 发布就绪（性能 + 无障碍 + 上架 + 签名） | ⏳ 后续迭代 | |
 
-本次会话已交付"可编译、可跑通一次对话"的鸿蒙版起点（H1 + H2 核心 + H3 Chat MVP + CI），完成 H4 功能对齐（8 AgentType 全路由 + DAG 工作流 + MCP + 插件系统），并推进 H5（后台保活 + 三语本地化）。H5 剩余项与 H6 写入路线图，后续版本迭代推进。
+本次会话已交付"可编译、可跑通一次对话"的鸿蒙版起点（H1 + H2 核心 + H3 Chat MVP + CI），完成 H4 功能对齐（8 AgentType 全路由 + DAG 工作流 + MCP + 插件系统），并推进 H5（后台保活 + 三语本地化 + FormKit 服务卡片 + README 构建文档）。H5 剩余项（语音/端侧推理）与 H6 写入路线图，后续版本迭代推进。
 
 每个阶段完成后回填本表「状态」列，保持文档与代码同步。

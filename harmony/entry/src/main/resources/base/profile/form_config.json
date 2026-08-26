@@ -1,0 +1,23 @@
+{
+  // FormKit 服务卡片配置（对标 android res/xml/widget_info.xml）
+  // 快捷输入卡片：显示连接状态 + Agent 名，点击拉起主应用 Chat 页。
+  "forms": [
+    {
+      "name": "QuickInputCard",
+      "description": "$string:card_send_hint",
+      "src": "./ets/widget/QuickInputCard.ets",
+      "uiSyntax": "arkts",
+      "window": {
+        "designWidth": 720
+      },
+      "isDefault": true,
+      "scheduledUpdateTime": "00:00",
+      "updateEnabled": true,
+      "supportDimensions": [
+        "2x2",
+        "2x4"
+      ],
+      "defaultDimension": "2x2"
+    }
+  ]
+}

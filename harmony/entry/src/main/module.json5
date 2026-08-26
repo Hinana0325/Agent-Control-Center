@@ -35,6 +35,22 @@
         ]
       }
     ],
+    // H5 FormKit 服务卡片：快捷输入卡片（对标 Android Widget）
+    "extensionAbilities": [
+      {
+        "name": "QuickInputFormAbility",
+        "srcEntry": "./ets/widget/QuickInputFormAbility.ets",
+        "label": "$string:app_name",
+        "description": "$string:card_send_hint",
+        "type": "form",
+        "metadata": [
+          {
+            "name": "ohos.extension.form",
+            "resource": "$profile:form_config"
+          }
+        ]
+      }
+    ],
     // H5 后台保活：长时任务申请权限（对齐 Android FOREGROUND_SERVICE）
     "requestPermissions": [
       {

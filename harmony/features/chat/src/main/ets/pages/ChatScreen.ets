@@ -1,7 +1,8 @@
 // Chat feature 主屏（对标 android features/chat/ChatScreen.kt + ios ChatScreen.swift）
 // H7 MVP：消息列表 + 输入栏 + 流式 SSE 渲染 + 连接状态指示。
 // 状态由 ChatViewModel 管理，UI 通过 @State + 回调同步。
-import { AppColors, AppSpacing, AppShape, AppType } from 'common';
+import common from '@ohos.app.ability.common';
+import { AppColors, AppSpacing, AppShape, AppType, CardDataProvider } from 'common';
 import { MessageRole } from 'common';
 import { ChatViewModel, ChatMessage } from '../viewmodel/ChatViewModel';
 
@@ -32,6 +33,9 @@ export struct ChatScreen {
     };
     this.viewModel.onConnectionChanged = (connected: boolean): void => {
       this.isConnected = connected;
+      // H5 服务卡片：同步连接状态与 Agent 名到 FormKit 卡片数据桥
+      CardDataProvider.updateConnectionState(getContext(this) as common.Context,
+        connected, connected ? this.viewModel.getConnectedAgentName() : null);
     };
     this.viewModel.onError = (message: string): void => {
       this.errorMessage = message;

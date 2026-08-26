@@ -8,6 +8,8 @@
     { "name": "nav_settings", "value": "設定" },
     { "name": "coming_soon", "value": "近日公開" },
     { "name": "coming_soon_desc", "value": "この機能は HarmonyOS 版で開発中です。" },
-    { "name": "keep_background_reason", "value": "バックグラウンド中もエージェント接続を維持する" }
+    { "name": "keep_background_reason", "value": "バックグラウンド中もエージェント接続を維持する" },
+    { "name": "card_send_hint", "value": "タップしてメッセージを送信" },
+    { "name": "card_new_chat", "value": "新規チャット" }
   ]
 }

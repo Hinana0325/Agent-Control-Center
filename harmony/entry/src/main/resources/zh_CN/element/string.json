@@ -8,6 +8,8 @@
     { "name": "nav_settings", "value": "设置" },
     { "name": "coming_soon", "value": "敬请期待" },
     { "name": "coming_soon_desc", "value": "该功能正在鸿蒙端开发中。" },
-    { "name": "keep_background_reason", "value": "应用后台运行时保持智能体连接" }
+    { "name": "keep_background_reason", "value": "应用后台运行时保持智能体连接" },
+    { "name": "card_send_hint", "value": "点击发送消息" },
+    { "name": "card_new_chat", "value": "新建对话" }
   ]
 }

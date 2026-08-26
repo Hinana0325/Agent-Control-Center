@@ -8,6 +8,8 @@
     { "name": "nav_settings", "value": "Settings" },
     { "name": "coming_soon", "value": "Coming Soon" },
     { "name": "coming_soon_desc", "value": "This feature is under development for HarmonyOS." },
-    { "name": "keep_background_reason", "value": "Keep the agent connection alive while the app is in the background" }
+    { "name": "keep_background_reason", "value": "Keep the agent connection alive while the app is in the background" },
+    { "name": "card_send_hint", "value": "Tap to send a message" },
+    { "name": "card_new_chat", "value": "New Chat" }
   ]
 }
