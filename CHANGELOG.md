@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.1.0] - 2026-08-26
+
+### 三原生架构 + 厂商适配 — HarmonyOS 第三原生端 & 小米系系统特性
+
+从 v4.x 双端（Android/iOS）扩展为三端（Android/iOS/HarmonyOS NEXT），共享协议层不变；Android 端新增国产 ROM 厂商适配体系（小米保活引导 + 金标联盟公平运行内存机制）。
+
+#### HarmonyOS 第三原生端（新增 `harmony/`）
+
+- **多 HSP 模块化工程**：`common` HSP（协议/传输/安全/持久化/运行时/MCP/插件/卡片数据桥）+ 8 个 `features/*` HSP（chat/agents/activity/marketplace/settings/workflow/mcp/compare）+ `entry` HAP。
+- **协议层映射**：11 JSON Schema 精确映射为 ArkTS interface，字段名/类型/枚举与双端完全对齐。
+- **核心链路**：`OpenAIHttpTransport`（HTTP+SSE）/ `WebSocketTransport` / `TransportFactory` / `ConnectionRepository`；HUKS（AKS:）+ cryptoFramework（AH1:）；relationalStore 实体 + DAO 对齐 Room/SwiftData。
+- **功能对齐**：8 AgentType 全路由（含 ComfyUI 文生图双模式）+ `WorkflowEngine` BFS 拓扑/环检测/4 节点类型 + MCP 三件套（JSON-RPC 2.0）+ `PluginExecutor` 三动作。
+- **平台特性（H5）**：`KeepAliveManager` 后台保活（DATA_TRANSFER 长时任务）、FormKit 服务卡片（2x2 竖版 + 2x4 宽版双布局 + formId 注册表 + 应用侧主动推送）、四语本地化（base/zh_CN/en_US/ja_JP）。
+- **CI**：`.github/workflows/build-harmony.yml`（self-hosted harmony-ci runner）。
+
+#### 厂商适配 — 小米 HyperOS/MIUI（新增 `core/vendor/`）
+
+- **`VendorRomAdapter`**：ROM 厂商双信号检测（品牌关键词 + `ro.miui.ui.version.name`/`ro.mi.os.version.name` 系统属性反射读取）。
+- **`MiuiKeepAliveHelper`**：电池优化白名单申请（标准 PowerManager API）+ MIUI 自启动管理页跳转（3 候选 Activity + 应用详情页兜底）+ 省电策略引导；设置 → 性能 → 厂商保活优化区块（仅小米设备渲染，ON_RESUME 刷新白名单状态），strings 四语。
+- **`BootCompletedReceiver`**：开机/应用更新后恢复 Agent 连接（仅已配置用户，克制不打扰）。
+
+#### 公平运行内存机制（金标联盟统一规范）
+
+- **`FairMemoryManager`**：响应 `itgsa.intent.action.TRIM/KILL` 广播（动态注册，专用 HandlerThread），解析 common/extra Bundle（notifyType 1000=PSS/2000=Java 堆），经 callback IBinder `transact(FIRST_CALL_TRANSACTION, FLAG_ONEWAY)` 回调处理结果（3s 超时），DeathRecipient 追踪系统服务死亡。
+- **释放钩子体系**：`addReleaseHook` 注册——传输层内存历史清理（`ConnectionRepository.clearAllHistory` 新增转发，连接不受影响）+ Analytics 环形缓冲清空；KILL 时消息/会话已实时落库无需额外备份现场。
+- **`onTrimMemory` 分级**：`UI_HIDDEN` 清性能采样、`RUNNING_LOW` 清埋点缓冲、`COMPLETE` 全量清理，与厂商广播互补。
+
+#### 文档
+
+- **README.md**：更新为三端架构总览（技术栈三方对照表/11 Schema/8 AgentType/项目结构含 harmony 与 core/vendor）。
+- **docs/vendor-adaptation.md**（新增）：厂商适配指南（小米保活三重管控 + 公平内存广播契约/回调协议/释放策略/验证方法/四家厂商官方文档链接）。
+
+#### Fixed
+
+- **鸿蒙工程 94 处 UI DSL 非法语法**：`build(): void`/`@Builder xxx(): void`/`Column(): void` 修正为官方 `build()`/`xxx()`/`Column()` 语法（原写法无法通过 ArkTS 编译）。
+- **ko strings 单引号**：`values-ko/strings.xml` vendor 文案单引号导致 aapt 解析失败，改全角引号。
+
 ## [4.8.0] - 2026-07-23
 
 ### Added — ComfyUI / OpenWebUI 双新 Agent 类型接入与功能融合

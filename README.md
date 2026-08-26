@@ -1,43 +1,44 @@
-# Agent Control Center v4.8.0
+# Agent Control Center v5.1.0
 
-**双原生多 Agent 移动端控制中心** —— Android（Kotlin + Jetpack Compose）与 iOS（Swift + SwiftUI）双原生实现，共享永久统一协议层，连接并远程操控多种 AI Agent（Hermes / OpenCode / OpenAI 兼容 / 本地模型）。
+**三原生多 Agent 移动端控制中心** —— Android（Kotlin + Jetpack Compose）、iOS（Swift + SwiftUI）、HarmonyOS（ArkTS + ArkUI）三原生实现，共享永久统一协议层，连接并远程操控多种 AI Agent（Hermes / OpenCode / OpenAI 兼容 / ComfyUI / 本地模型）。
 
-> 项目已从早期 PWA + Capacitor 架构完全重构为双原生应用。旧版说明见 [`docs/legacy-pwa.md`](docs/legacy-pwa.md)。
+> 项目已从早期 PWA + Capacitor 架构完全重构为原生应用（v4.x 双端 → v5.x 三端）。旧版说明见 [`docs/legacy-pwa.md`](docs/legacy-pwa.md)。
 
 ---
 
 ## 架构总览
 
 ```
-┌─────────────────────────────────────────────────┐
-│                  Protocol Layer                  │
-│  10 JSON Schema + 4 Transport Protocol (共享)    │
-│  android/ ←  ios/  ←  protocol/ (单一事实来源)   │
-├────────────────────┬────────────────────────────┤
-│   Android (Kotlin)  │      iOS (Swift)           │
-│   Jetpack Compose   │      SwiftUI               │
-│   Hilt + Coroutines │      @Observable + async   │
-│   Room + DataStore  │      SwiftData + Keychain  │
-│   Ktor + OkHttp     │      URLSession + WS Task  │
-│   Android Keystore  │      CryptoKit             │
-└────────────────────┴────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                       Protocol Layer                          │
+│     11 JSON Schema + 5 Transport Protocol (三端共享)          │
+│     android/ ←  ios/  ←  harmony/  ←  protocol/ (单一事实来源) │
+├──────────────────────┬──────────────────┬────────────────────┤
+│   Android (Kotlin)   │   iOS (Swift)    │  HarmonyOS (ArkTS) │
+│   Jetpack Compose     │   SwiftUI        │  ArkUI             │
+│   Hilt + Coroutines   │   @Observable    │  HSP 多模块        │
+│   Room + DataStore    │   SwiftData      │  relationalStore   │
+│   Ktor + OkHttp       │   URLSession    │  @ohos.net.http    │
+│   Android Keystore    │   CryptoKit      │  HUKS + cryptoFramework │
+└──────────────────────┴──────────────────┴────────────────────┘
 ```
 
 ## 技术栈
 
-| 层 | Android | iOS |
-|:---|:---|:---|
-| 语言 | Kotlin 2.2.0 | Swift 5.9+ |
-| UI | Jetpack Compose (Material 3) | SwiftUI |
-| 架构 | MVVM + StateFlow | MVVM + @Observable |
-| 异步 | Coroutines + Flow | async/await + AsyncStream |
-| 网络 | Ktor (HTTP/SSE/WS) | URLSession + WebSocketTask |
-| 持久化 | Room + DataStore | SwiftData + UserDefaults |
-| 加密 | Android Keystore (AES-256-GCM) | CryptoKit (AES-256-GCM) |
-| DI | Hilt | 手动构造注入 |
-| 最低版本 | minSdk 24 | iOS 18.0 |
+| 层 | Android | iOS | HarmonyOS |
+|:---|:---|:---|:---|
+| 语言 | Kotlin 2.4.10 | Swift 6.0 | ArkTS |
+| UI | Jetpack Compose (Material 3) | SwiftUI | ArkUI (声明式) |
+| 架构 | MVVM + StateFlow | MVVM + @Observable | MVVM + @State 回调 |
+| 异步 | Coroutines + Flow | async/await + AsyncStream | Promise/async-await |
+| 网络 | Ktor (HTTP/SSE/WS) | URLSession + WebSocketTask | @ohos.net.http/webSocket |
+| 持久化 | Room + DataStore | SwiftData + UserDefaults | relationalStore + preferences |
+| 加密 | Android Keystore (AES-256-GCM) | CryptoKit (AES-256-GCM) | HUKS + cryptoFramework |
+| DI | Hilt | 手动构造注入 | HSP 模块导入 |
+| 模块化 | 单 app 多包 | 单 target 分目录 | 多 HSP（common + 8 features） |
+| 最低版本 | minSdk 24 | iOS 18.0 | HarmonyOS NEXT (API 12+) |
 
-## 协议层（双端共享）
+## 协议层（三端共享）
 
 | 模块 | 文件 |
 |:---|:---|
@@ -51,25 +52,28 @@
 | Plugin | `protocol/schemas/plugin-schema.json` |
 | MCP (JSON-RPC 2.0) | `protocol/schemas/mcp-schema.json` |
 | File Transfer | `protocol/schemas/file-transfer-schema.json` |
+| Collaboration | `protocol/schemas/collab-schema.json` |
 | HTTP API | `protocol/transport/http-api.md` |
 | SSE Protocol | `protocol/transport/sse-protocol.md` |
 | WebSocket Protocol | `protocol/transport/websocket-protocol.md` |
 | Auth (AKS:/AH1:) | `protocol/transport/auth.md` |
+| TLS Pinning | `protocol/transport/tls-pinning.md` |
 
 ---
 
 ## 连接方式（多协议）
 
-传输层统一抽象，按 `AgentType` 路由：
+传输层统一抽象，按 `AgentType` 路由（8 种）：
 
 | AgentType | 传输实现 | 协议 |
 |:---|:---|:---|
 | Hermes / OpenClaw | WebSocket | `ws://host/ws`（鉴权帧 + 自动重连） |
-| OpenAI / OpenRouter / Xiaomi MiMo | HTTP + SSE | `POST /v1/chat/completions`（流式） |
+| OpenAI / OpenRouter / Xiaomi MiMo / OpenWebUI | HTTP + SSE | `POST /v1/chat/completions`（流式） |
 | OpenCode | WebSocket | 同 Hermes |
 | LocalModel (Ollama / LM Studio) | HTTP + SSE | 本地端点暴露 OpenAI 格式 |
+| ComfyUI | HTTP | 文生图双模式（默认工作流 + JSON 直提交） |
 
-> 加密：`AKS:` 前缀用于静态存储（Keychain/Keystore），`AH1:` 前缀用于 E2E 传输加密（PBKDF2 600000 轮）。双端格式完全一致。
+> 加密：`AKS:` 前缀用于静态存储（Keychain/Keystore/HUKS），`AH1:` 前缀用于 E2E 传输加密（PBKDF2 600000 轮）。三端格式完全一致。
 
 ---
 
@@ -77,39 +81,57 @@
 
 ```
 agent-control-center/
-├── protocol/                    # 永久统一协议层（双端共享）
-│   ├── schemas/                 # 10 JSON Schema 契约
-│   ├── transport/               # 4 传输协议文档
+├── protocol/                    # 永久统一协议层（三端共享）
+│   ├── schemas/                 # 11 JSON Schema 契约
+│   ├── transport/               # 5 传输协议文档
 │   └── README.md
 ├── android/                     # Android 原生 (Kotlin + Compose)
 │   ├── app/src/main/java/com/agentcontrolcenter/app/
 │   │   ├── AgentControlCenterApplication.kt
 │   │   ├── AgentControlCenterWidget.kt
-│   │   ├── AgentConnectionService.kt
+│   │   ├── AgentConnectionService.kt      # 前台服务保活
 │   │   ├── MainActivity.kt
-│   │   ├── data/                # Repository + Room + DataStore
-│   │   ├── provider/            # Transport 抽象 + 工厂
-│   │   ├── runtime/             # AgentManager + WorkflowEngine
+│   │   ├── agent/               # Agent 模型（AgentType/协议/能力）
+│   │   ├── core/
+│   │   │   ├── vendor/          # 厂商适配（小米保活 + 公平内存）
+│   │   │   ├── hardware/        # SoC 芯片检测与推理优化
+│   │   │   ├── security/        # Keystore + Crypto + UrlValidator
+│   │   │   ├── common/          # PerformanceMonitor 等
+│   │   │   ├── database/        # Room（8 实体 / 6 DAO）
+│   │   │   └── datastore/       # 设置存储
+│   │   ├── data/                # Repository 层（chat/sync/marketplace/collab/insights）
+│   │   ├── transport/           # Transport 抽象 + 工厂 + http/websocket/comfyui
+│   │   ├── runtime/             # AgentManager + WorkflowEngine + SessionManager
 │   │   ├── mcp/                 # MCP 协议实现
 │   │   ├── plugin/              # 插件执行器
-│   │   ├── feature/             # Compose Screens + ViewModels
+│   │   ├── feature/             # Compose Screens + ViewModels（15 模块）
 │   │   └── ui/                  # Theme + Components + Adaptive
-│   ├── app/src/test/            # 14 测试文件 / 75+ 用例
+│   ├── app/src/test/            # 单元测试
 │   └── build.gradle
 ├── ios/                         # iOS 原生 (Swift + SwiftUI)
 │   ├── project.yml              # XcodeGen 配置
 │   ├── AgentControlCenter/
-│   │   ├── Models/              # 8 文件匹配 10 JSON Schema
+│   │   ├── Models/              # 匹配 11 JSON Schema
 │   │   ├── Security/            # KeychainManager + CryptoManager
 │   │   ├── Transport/           # HTTP/SSE + WebSocket
 │   │   ├── Runtime/             # AgentManager + WorkflowEngine
 │   │   ├── MCP/                 # McpRegistry + McpClient + McpBridge
 │   │   ├── Plugin/              # PluginExecutor
-│   │   ├── Persistence/         # SwiftData 5 实体
-│   │   ├── Features/            # 6 SwiftUI Views
+│   │   ├── Persistence/         # SwiftData 实体
+│   │   ├── Features/            # SwiftUI Views
 │   │   └── Theme/               # AppTheme
 │   └── README.md
-├── .github/workflows/           # CI/CD
+├── harmony/                     # HarmonyOS NEXT 原生 (ArkTS + ArkUI)
+│   ├── common/                  # common HSP（协议/传输/安全/持久化/运行时/MCP/插件/卡片数据桥）
+│   ├── features/                # 8 feature HSP（chat/agents/activity/marketplace/settings/workflow/mcp/compare）
+│   ├── entry/                   # entry HAP（主壳 + FormKit 服务卡片）
+│   └── oh-package.json5
+├── docs/                        # 项目文档
+│   ├── architecture.md          # 架构详解
+│   ├── vendor-adaptation.md     # 厂商适配（小米保活 + 公平内存机制）
+│   ├── harmony-roadmap.md       # 鸿蒙端路线图
+│   └── ...
+├── .github/workflows/           # CI/CD（Android/iOS/HarmonyOS 三流水线）
 ├── CHANGELOG.md
 ├── CONTRIBUTING.md
 └── SECURITY.md
@@ -120,17 +142,27 @@ agent-control-center/
 ## 功能
 
 - 💬 **多会话聊天**：流式增量渲染、消息回复、搜索、滑动切换
-- 🔌 **多协议连接**：WebSocket / HTTP+SSE，向导式接入，配置持久化
+- 🔌 **多协议连接**：8 种 AgentType（WebSocket / HTTP+SSE / 文生图），向导式接入
 - 🖥️ **本地模型**：自动发现 Ollama / LM Studio / llama.cpp 端点
 - 🔧 **MCP 协议**：JSON-RPC 2.0，工具注册与调用
 - ⚙️ **工作流引擎**：DAG 拓扑排序，多 Agent 编排（翻译链/代码审查/研究助手）
 - 🧩 **插件系统**：HttpCall / Broadcast / Workflow 三类动作
-- 🔔 **前台保活**：前台服务 + 通知内联回复（Android）
-- 📱 **桌面 Widget**：快捷输入弹窗 + 语音按钮（Android）
-- 🎙️ **语音**：语音输入与语音对话模式
+- 🔔 **前台保活**：前台服务 + 通知内联回复（Android）/ 长时任务（HarmonyOS）
+- 📱 **桌面卡片**：Android Widget 快捷输入 / HarmonyOS FormKit 服务卡片（2x2/2x4）
+- 🎙️ **语音**：语音输入与语音对话模式（Android/iOS）
 - 🎨 **主题**：浅色 / 深色 / Liquid Glass 三套
 - 📤 **系统分享**：接收外部分享文本一键发问
-- 🔐 **E2E 加密**：双端 `AH1:` 格式，PBKDF2 600000 轮
+- 🔐 **E2E 加密**：三端 `AH1:` 格式，PBKDF2 600000 轮
+- 🏭 **厂商适配**：小米 HyperOS/MIUI 后台保活引导 + 金标联盟公平运行内存机制
+- 🌐 **本地化**：Android 四语（en/zh/ja/ko）/ HarmonyOS 四语（base/zh_CN/en_US/ja_JP）
+
+### 厂商适配（Android）
+
+面向国产 ROM 的系统特性适配（详见 [`docs/vendor-adaptation.md`](docs/vendor-adaptation.md)）：
+
+- **小米保活引导**：MIUI/HyperOS 三重管控（自启动 / 省电策略 / 电池优化白名单）检测与设置跳转，设置 → 性能 → 厂商保活优化
+- **公平运行内存机制**：金标联盟（vivo/小米/OPPO/荣耀）统一规范，响应 `itgsa.intent.action.TRIM/KILL` 广播并经 callback IBinder 回调（3s 超时）；标准 `onTrimMemory` 分级释放互补
+- **开机恢复**：`BOOT_COMPLETED` / `MY_PACKAGE_REPLACED` 拉起连接服务（仅已配置用户）
 
 ---
 
@@ -149,7 +181,7 @@ cd android && ./gradlew assembleRelease
 cd android && ./gradlew testDebugUnitTest
 ```
 
-用 Android Studio 打开 `android/` 目录即可开发；最低要求 JDK 17 + Android SDK。
+用 Android Studio 打开 `android/` 目录即可开发；最低要求 JDK 17 + Android SDK（compileSdk 37）。
 
 ### iOS
 

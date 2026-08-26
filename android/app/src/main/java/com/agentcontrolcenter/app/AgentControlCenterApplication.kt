@@ -1,8 +1,10 @@
 package com.agentcontrolcenter.app
 
 import android.app.Application
+import android.content.ComponentCallbacks2
 import com.agentcontrolcenter.app.core.analytics.AnalyticsManager
 import com.agentcontrolcenter.app.core.common.PerformanceMonitor
+import com.agentcontrolcenter.app.core.vendor.FairMemoryManager
 import com.agentcontrolcenter.app.transport.ConnectionRepository
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
@@ -51,6 +53,10 @@ class AgentControlCenterApplication : Application() {
         // Our logger writes to a local file first, then delegates to Sentry.
         installLocalCrashLogger()
 
+        // 公平运行内存机制（金标联盟统一规范）：注册 TRIM/KILL 广播接收器 +
+        // 释放钩子。钩子内仅做轻量内存清理，IO 落库工作自行走 appScope。
+        setupFairMemory()
+
         // 骁龙硬件检测和优化初始化（在 IO 线程，避免阻塞启动）
         appScope.launch {
             PerformanceMonitor.initializeHardware(this@AgentControlCenterApplication)
@@ -61,6 +67,55 @@ class AgentControlCenterApplication : Application() {
         // 埋点开关由 AnalyticsManager 内部从 SettingsDataStore 异步同步，
         // 关闭时此事件不会写入 ring buffer。
         analyticsManager.logEvent("app_launch")
+    }
+
+    /**
+     * 公平运行内存机制适配（金标联盟：vivo/小米/OPPO/荣耀统一规范）。
+     *
+     * 注册两类钩子（广播触发时依次执行）：
+     *  - 传输层内存历史清理：WebSocket localMessageCache / OpenAI
+     *    conversationHistory 均为可从 Room 重建的副本，连接本身不受影响
+     *  - Analytics 环形缓冲清空：埋点历史，导出前丢失可接受
+     *
+     * 消息/会话实时落库（Room），查杀广播到达时无需额外备份现场，
+     * FairMemoryManager 收到广播后即回调系统 result=0。
+     */
+    private fun setupFairMemory() {
+        FairMemoryManager.addReleaseHook("transport_history") {
+            // suspend 转同步：钩子跑在广播专用线程，launch 到 IO 池即返回
+            appScope.launch { connectionRepository.clearAllHistory() }
+        }
+        FairMemoryManager.addReleaseHook("analytics_events") {
+            analyticsManager.clearEvents()
+        }
+        FairMemoryManager.initialize(this)
+    }
+
+    /**
+     * 标准 Android 内存分级回调 — 与公平内存广播互补：
+     *  - 厂商公平内存 TRIM 广播：厂商侧触达预警线时（PSS/Java 堆），
+     *    本应用通过 FairMemoryManager 接收并 3s 内回调
+     *  - 本回调（ComponentCallbacks2）：AOSP 原生内存压力分级，
+     *    RUNNING_LOW 起清理缓冲，UI_HIDDEN 清理采样窗口
+     */
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        when {
+            level >= ComponentCallbacks2.TRIM_MEMORY_COMPLETE -> {
+                // 系统内存危急且本进程在后备被杀列表：全量清理
+                PerformanceMonitor.reset()
+                analyticsManager.clearEvents()
+                appScope.launch { connectionRepository.clearAllHistory() }
+            }
+            level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW -> {
+                // 前台运行且系统内存低：清埋点缓冲（可丢）
+                analyticsManager.clearEvents()
+            }
+            level == ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN -> {
+                // 所有 UI 均不可见：清性能采样（重建零成本）
+                PerformanceMonitor.reset()
+            }
+        }
     }
 
     /**

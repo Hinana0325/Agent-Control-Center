@@ -228,6 +228,16 @@ class ConnectionRepository @Inject constructor(
     }
 
     /**
+     * 清空所有 session 的传输层内存历史（公平内存机制释放钩子）。
+     *
+     * WebSocketTransport.localMessageCache 与 OpenAIHttpTransport.conversationHistory
+     * 均为可从 Room 重建的内存副本；连接本身不受影响。transport 为 null 时安全跳过。
+     */
+    suspend fun clearAllHistory() {
+        _transport.value?.clearAllHistory()
+    }
+
+    /**
      * 断开当前连接但保留 transport 实例以便后续重连。
      */
     fun disconnect() {
