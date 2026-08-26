@@ -1,0 +1,12 @@
+{
+  "string": [
+    { "name": "workflow_title", "value": "ワークフロー" },
+    { "name": "workflow_input_hint", "value": "ワークフロー入力…" },
+    { "name": "workflow_run", "value": "実行" },
+    { "name": "workflow_running", "value": "実行中…" },
+    { "name": "workflow_select_hint", "value": "テンプレートを選んで実行" },
+    { "name": "workflow_history", "value": "履歴" },
+    { "name": "workflow_no_runs", "value": "まだ記録がありません" },
+    { "name": "workflow_nodes_suffix", "value": " ノード" }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "module": {
+    "name": "settings",
+    "type": "shared",
+    "description": "Agent Control Center Settings feature",
+    "deviceTypes": [ "phone", "tablet", "2in1" ],
+    "deliveryWithInstall": true,
+    "pages": ""
+  }
+}

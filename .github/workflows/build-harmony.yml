@@ -1,0 +1,271 @@
+name: Build & Test (Harmony)
+
+on:
+  push:
+    branches: [main]
+    # 统一使用 v* 标签方案，与 Android (build-apk.yml) / iOS (build-ios.yml) 共用同一 GitHub Release。
+    # 一个 v4.8.0 标签会同时触发三端工作流，三者都把产物上传到同名 Release (v4.8.0)，
+    # 便于用户在同一个发布页同时获取 APK / IPA / HAP 三端产物。
+    tags: ['v*']
+    paths:
+      - 'harmony/**'
+      - 'protocol/**'
+      - '.github/workflows/build-harmony.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'harmony/**'
+      - 'protocol/**'
+      - '.github/workflows/build-harmony.yml'
+
+# ──────────────────────────────────────────────────────────────────────────
+# 运行环境说明（KNOWN CONSTRAINT）：
+#   HarmonyOS NEXT 命令行工具（commandline-tools-linux-x64，含 hvigorw / ohpm /
+#   ohos-sdk）不公开下载，需华为开发者账号（实名认证）从
+#   https://developer.huawei.com/consumer/cn/download/ 获取。
+#   GitHub-hosted runner 不预装该工具链，因此本工作流运行在带 `harmony-ci`
+#   label 的 self-hosted Linux runner 上——runner 机器需预先安装：
+#     1. HarmonyOS Command Line Tools（解压后 bin/ 在 PATH，含 hvigorw / ohpm）
+#     2. JDK 21（commandline-tools 26.0.0 Beta2+ 推荐 JDK 21）
+#     3. Node.js 20（hvigor 基于 Node 运行）
+#   并配置环境变量：
+#     export DEVECO_SDK_HOME=$HOME/harmony-cli/sdk
+#     export PATH=$HOME/harmony-cli/bin:$PATH
+#   替代方案：华为 CodeArts Pipeline（¥0.5/min，原生鸿蒙 CI）。
+#   未来若出现 hosted-runner 兼容的 bootstrap（如 chawyehsu/hdx 稳定），
+#   可将 runs-on 切回 ubuntu-latest。
+# ──────────────────────────────────────────────────────────────────────────
+
+jobs:
+  build:
+    name: Assemble HAP (Harmony)
+    runs-on: [self-hosted, harmony-ci]
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      # product=default 对应 build-profile.json5 中的 products[0].name
+      HVIGOR_PRODUCT: "default"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        # commandline-tools 26.0.0 Beta2+ 推荐 JDK 21；JDK 17 亦可（较低版本工具链）。
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Node.js 20
+        # hvigor 基于 Node.js 运行，鸿蒙工具链内置 Node 18，这里用 20 LTS 兼容。
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Verify HarmonyOS toolchain
+        # 前置校验：若 self-hosted runner 未安装命令行工具，提前失败并给出明确指引。
+        working-directory: harmony
+        run: |
+          echo "hvigorw: $(command -v hvigorw || echo 'NOT FOUND')"
+          echo "ohpm:    $(command -v ohpm || echo 'NOT FOUND')"
+          if ! command -v hvigorw >/dev/null 2>&1; then
+            echo "::error::hvigorw 不在 PATH。请在 self-hosted runner 上安装 HarmonyOS Command Line Tools 并将其 bin/ 加入 PATH。"
+            exit 1
+          fi
+          if ! command -v ohpm >/dev/null 2>&1; then
+            echo "::error::ohpm 不在 PATH。请确认 commandline-tools 已正确安装。"
+            exit 1
+          fi
+          hvigorw -v
+
+      - name: Cache OHPM modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            harmony/**/oh_modules
+            ~/.ohpm
+          key: ${{ runner.os }}-ohpm-${{ hashFiles('harmony/**/oh-package.json5') }}
+          restore-keys: |
+            ${{ runner.os }}-ohpm-
+
+      - name: Install dependencies
+        # ohpm install --all 递归安装工程及所有模块的依赖（对标 gradle build 的依赖解析）。
+        working-directory: harmony
+        run: ohpm install --all
+
+      - name: Assemble debug HAP
+        # 编译全工程 HAP：--mode project 走工程级构建，
+        # -p buildMode=debug 对应 buildModeSet 中的 debug，
+        # --no-daemon 避免守护进程占用（CI 一次性执行）。
+        working-directory: harmony
+        run: |
+          set -o pipefail
+          hvigorw assembleHap \
+            --mode project \
+            -p product=${HVIGOR_PRODUCT} \
+            -p buildMode=debug \
+            --no-daemon 2>&1 | tee build-debug.log
+
+      - name: Locate HAP outputs
+        id: hap
+        working-directory: harmony
+        run: |
+          # HAP 产物路径：entry/build/default/outputs/default/*.hap
+          # 无 signingConfigs 时产出 *-unsigned.hap，已签名则为 *-signed.hap
+          HAP_DIR="entry/build/default/outputs/default"
+          if [ ! -d "$HAP_DIR" ]; then
+            echo "::error::HAP 输出目录不存在: $HAP_DIR"
+            exit 1
+          fi
+          echo "hap_dir=$HAP_DIR" >> "$GITHUB_OUTPUT"
+          ls -la "$HAP_DIR"/*.hap
+
+      - name: Upload debug HAP artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: harmony-debug-hap
+          path: harmony/${{ steps.hap.outputs.hap_dir }}/*.hap
+          if-no-files-found: error
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: harmony-build-logs
+          path: harmony/build-debug.log
+          if-no-files-found: ignore
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Release (HAP) — 仅在 v* 标签推送时运行。
+  # 与 build-apk.yml / build-ios.yml 的 release 任务共用同一个 GitHub Release (v* tag)：
+  #   - 若 Release 已存在（通常由 Android/iOS 工作流先创建），仅当 HAP 资源不存在时上传；
+  #   - 若 Release 不存在，则在此创建并附带 HAP。
+  # 三端产物（APK / IPA / HAP）落在同一 Release 页面。
+  #
+  # 已知限制（KNOWN LIMITATION）：
+  #   由于尚未配置鸿蒙签名密钥（build-profile.json5 的 signingConfigs 为空），
+  #   这里产出 *未签名* 的 release HAP（*-unsigned.hap），无法直接安装到真机。
+  #   该任务目前仅用于：
+  #     (a) 在 CI 中验证 release configuration 的 assembleHap 流程能跑通；
+  #     (b) 产出 artifact 供人工排查。
+  #   要产出可被真机安装的签名 HAP，需要后续：
+  #     1. 在 AGC Console 申请调试 / 发布证书与 Profile；
+  #     2. 在 build-profile.json5.signingConfigs 填入 cert file / store file 路径；
+  #     3. 将签名材料作为 secret 注入 self-hosted runner；
+  #     4. 重新启用签名后产物将变为 *-signed.hap。
+  # ──────────────────────────────────────────────────────────────────────────
+  release:
+    name: Release (Harmony)
+    runs-on: [self-hosted, harmony-ci]
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    permissions:
+      contents: write
+    timeout-minutes: 30
+    env:
+      HVIGOR_PRODUCT: "default"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Verify HarmonyOS toolchain
+        working-directory: harmony
+        run: |
+          if ! command -v hvigorw >/dev/null 2>&1 || ! command -v ohpm >/dev/null 2>&1; then
+            echo "::error::hvigorw / ohpm 不在 PATH，self-hosted runner 工具链未就绪。"
+            exit 1
+          fi
+          hvigorw -v
+
+      - name: Cache OHPM modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            harmony/**/oh_modules
+            ~/.ohpm
+          key: ${{ runner.os }}-ohpm-${{ hashFiles('harmony/**/oh-package.json5') }}
+          restore-keys: |
+            ${{ runner.os }}-ohpm-
+
+      - name: Install dependencies
+        working-directory: harmony
+        run: ohpm install --all
+
+      - name: Assemble release HAP (unsigned)
+        # KNOWN LIMITATION: signingConfigs 为空 → 产出未签名 HAP，仅供能 sideload 的测试者使用。
+        # 要产出真机可装的 HAP，需配置签名 secrets（见任务头注释）。
+        working-directory: harmony
+        run: |
+          set -o pipefail
+          hvigorw assembleHap \
+            --mode project \
+            -p product=${HVIGOR_PRODUCT} \
+            -p buildMode=release \
+            --no-daemon 2>&1 | tee build-release.log
+
+      - name: Locate release HAP
+        id: hap
+        working-directory: harmony
+        run: |
+          HAP_DIR="entry/build/default/outputs/default"
+          if [ ! -d "$HAP_DIR" ]; then
+            echo "::error::release HAP 输出目录不存在: $HAP_DIR"
+            exit 1
+          fi
+          echo "hap_dir=$HAP_DIR" >> "$GITHUB_OUTPUT"
+          ls -la "$HAP_DIR"/*.hap
+
+      - name: Upload release HAP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-hap
+          path: harmony/${{ steps.hap.outputs.hap_dir }}/*.hap
+          if-no-files-found: error
+
+      - name: Create or update GitHub Release
+        # 幂等逻辑与 build-apk.yml / build-ios.yml 的 release 任务一致：
+        #   - Release 已存在 → 仅当 HAP 资源不存在时上传；
+        #   - Release 不存在 → 创建并附带 HAP。
+        # APK / IPA / HAP 落在同一 Release (v* tag) 下。
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: harmony
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          echo "Publishing Harmony release ${VERSION}..."
+          HAP=$(find "${{ steps.hap.outputs.hap_dir }}" -name "*.hap" 2>/dev/null | head -1)
+          if [ -z "$HAP" ]; then
+            echo "No HAP found in ${{ steps.hap.outputs.hap_dir }}!"
+            find "${{ steps.hap.outputs.hap_dir }}" -type f 2>/dev/null
+            exit 1
+          fi
+          echo "Found HAP: $HAP"
+          HAP_NAME=$(basename "${HAP}")
+          if gh release view "${VERSION}" >/dev/null 2>&1; then
+            echo "Release ${VERSION} already exists."
+            if gh release view "${VERSION}" --json assets -q ".assets[].name" 2>/dev/null | grep -qx "${HAP_NAME}"; then
+              echo "Asset ${HAP_NAME} already exists on release ${VERSION}, skipping upload."
+            else
+              echo "Uploading ${HAP_NAME} to existing release ${VERSION}..."
+              gh release upload "${VERSION}" "${HAP}"
+            fi
+          else
+            # Android / iOS 工作流可能先创建了 Release；若没有，则在此创建。
+            gh release create "${VERSION}" \
+              --title "Agent Control Center ${VERSION}" \
+              --notes "For release notes see [CHANGELOG](https://github.com/Hinana0325/Agent-Control-Center/blob/main/CHANGELOG.md)" \
+              "${HAP}"
+          fi

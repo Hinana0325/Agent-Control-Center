@@ -1,0 +1,10 @@
+{
+  "module": {
+    "name": "compare",
+    "type": "shared",
+    "description": "Agent Control Center Compare feature",
+    "deviceTypes": [ "phone", "tablet", "2in1" ],
+    "deliveryWithInstall": true,
+    "pages": ""
+  }
+}

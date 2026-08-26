@@ -1,0 +1,22 @@
+{
+  // entry HAP 模块依赖（对标 android/app/build.gradle dependencies）
+  "name": "entry",
+  "version": "5.1.0",
+  "description": "Agent Control Center 主入口 HAP",
+  "main": "",
+  "author": "Hinana0325",
+  "license": "MIT",
+  "dependencies": {
+    // 三端版本号在 harmony/entry/oh-package.json5 与 android/variables.gradle、
+    // ios/project.yml MARKETING_VERSION 三处对齐，CI check-version.yml 校验一致。
+    "common": "file:../common",
+    "@features/chat": "file:../features/chat",
+    "@features/agents": "file:../features/agents",
+    "@features/activity": "file:../features/activity",
+    "@features/marketplace": "file:../features/marketplace",
+    "@features/settings": "file:../features/settings",
+    "@features/workflow": "file:../features/workflow",
+    "@features/mcp": "file:../features/mcp",
+    "@features/compare": "file:../features/compare"
+  }
+}

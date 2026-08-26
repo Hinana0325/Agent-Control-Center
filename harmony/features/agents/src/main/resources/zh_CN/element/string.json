@@ -1,0 +1,8 @@
+{
+  "string": [
+    { "name": "agents_coming_soon", "value": "智能体 — 敬请期待" },
+    { "name": "agents_more", "value": "更多" },
+    { "name": "agents_workflow_sub", "value": "DAG 编排" },
+    { "name": "agents_mcp_sub", "value": "工具服务" }
+  ]
+}

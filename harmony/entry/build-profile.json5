@@ -1,0 +1,21 @@
+{
+  // entry 模块构建配置（对标 android/app/build.gradle android{} block）
+  "apiType": "stageMode",
+  "buildOption": {
+    "arkOptions": {
+      "runtimeOnly": {
+        "sources": []
+      }
+    }
+  },
+  "buildModeSet": [
+    { "name": "debug", "arkOptions": { "obfuscate": false } },
+    { "name": "release", "arkOptions": { "obfuscate": false } }
+  ],
+  "targets": [
+    {
+      "name": "default",
+      "runtimeOS": "HarmonyOS"
+    }
+  ]
+}

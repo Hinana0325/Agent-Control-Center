@@ -1,0 +1,13 @@
+{
+  "string": [
+    { "name": "chat_title", "value": "聊天" },
+    { "name": "chat_connected", "value": "已连接" },
+    { "name": "chat_disconnected", "value": "未连接" },
+    { "name": "chat_empty_ready", "value": "开始对话" },
+    { "name": "chat_empty_no_agent", "value": "请先在设置中连接智能体" },
+    { "name": "chat_generating", "value": "生成中…" },
+    { "name": "chat_input_hint", "value": "输入消息…" },
+    { "name": "chat_send", "value": "发送" },
+    { "name": "chat_stop", "value": "停止" }
+  ]
+}

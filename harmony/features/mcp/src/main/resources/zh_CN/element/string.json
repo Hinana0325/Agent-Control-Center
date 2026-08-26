@@ -1,0 +1,20 @@
+{
+  "string": [
+    { "name": "mcp_title", "value": "MCP 服务" },
+    { "name": "mcp_empty", "value": "暂未配置 MCP 服务" },
+    { "name": "mcp_connect", "value": "连接" },
+    { "name": "mcp_disconnect", "value": "断开" },
+    { "name": "mcp_refresh", "value": "刷新" },
+    { "name": "mcp_delete", "value": "删除" },
+    { "name": "mcp_add", "value": "添加服务" },
+    { "name": "mcp_cancel", "value": "取消" },
+    { "name": "mcp_confirm", "value": "添加" },
+    { "name": "mcp_name_hint", "value": "服务名称" },
+    { "name": "mcp_apikey_hint", "value": "API 密钥（可选）" },
+    { "name": "mcp_state_connected", "value": "已连接" },
+    { "name": "mcp_state_connecting", "value": "连接中…" },
+    { "name": "mcp_state_failed", "value": "失败" },
+    { "name": "mcp_state_disconnected", "value": "未连接" },
+    { "name": "mcp_tools_title", "value": "已发现工具" }
+  ]
+}

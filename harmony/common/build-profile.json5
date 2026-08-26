@@ -1,0 +1,21 @@
+{
+  // common 模块构建配置（HSP 共享包）
+  "apiType": "stageMode",
+  "buildOption": {
+    "arkOptions": {
+      "runtimeOnly": {
+        "sources": []
+      }
+    }
+  },
+  "buildModeSet": [
+    { "name": "debug" },
+    { "name": "release" }
+  ],
+  "targets": [
+    {
+      "name": "default",
+      "runtimeOS": "HarmonyOS"
+    }
+  ]
+}

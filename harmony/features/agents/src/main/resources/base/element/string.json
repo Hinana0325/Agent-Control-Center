@@ -1,0 +1,8 @@
+{
+  "string": [
+    { "name": "agents_coming_soon", "value": "Agents — Coming Soon" },
+    { "name": "agents_more", "value": "More" },
+    { "name": "agents_workflow_sub", "value": "DAG orchestration" },
+    { "name": "agents_mcp_sub", "value": "Tool services" }
+  ]
+}

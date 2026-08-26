@@ -1,0 +1,11 @@
+{
+  // 工程级 ohpm 依赖配置（对标 android/build.gradle 根 buildscript + ios/ project.yml 依赖）
+  // 子模块各自的 oh-package.json5 通过 dependencies 引用 common / features。
+  "modelVersion": "5.0.0",
+  "description": "Agent Control Center — HarmonyOS NEXT 三原生端",
+  "dependencies": {},
+  "devDependencies": {
+    "@ohos/hvigor-ohos-plugin": "^4.0.0",
+    "@ohos/hvigor": "^4.0.0"
+  }
+}

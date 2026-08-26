@@ -1,0 +1,13 @@
+{
+  "string": [
+    { "name": "app_name", "value": "Agent Control Center" },
+    { "name": "nav_chat", "value": "Chat" },
+    { "name": "nav_agents", "value": "Agents" },
+    { "name": "nav_activity", "value": "Activity" },
+    { "name": "nav_marketplace", "value": "Marketplace" },
+    { "name": "nav_settings", "value": "Settings" },
+    { "name": "coming_soon", "value": "Coming Soon" },
+    { "name": "coming_soon_desc", "value": "This feature is under development for HarmonyOS." },
+    { "name": "keep_background_reason", "value": "Keep the agent connection alive while the app is in the background" }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "@features/mcp",
+  "version": "5.1.0",
+  "description": "Agent Control Center MCP feature — MCP Server 桥接与工具调用",
+  "main": "Index.ets",
+  "author": "Hinana0325",
+  "license": "MIT",
+  "dependencies": {
+    "common": "file:../../common"
+  }
+}

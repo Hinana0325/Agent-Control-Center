@@ -1,0 +1,8 @@
+{
+  "string": [
+    { "name": "agents_coming_soon", "value": "エージェント — 近日公開" },
+    { "name": "agents_more", "value": "その他" },
+    { "name": "agents_workflow_sub", "value": "DAGオーケストレーション" },
+    { "name": "agents_mcp_sub", "value": "ツールサービス" }
+  ]
+}

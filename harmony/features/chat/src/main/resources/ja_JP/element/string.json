@@ -1,0 +1,13 @@
+{
+  "string": [
+    { "name": "chat_title", "value": "チャット" },
+    { "name": "chat_connected", "value": "接続済み" },
+    { "name": "chat_disconnected", "value": "未接続" },
+    { "name": "chat_empty_ready", "value": "会話を始めましょう" },
+    { "name": "chat_empty_no_agent", "value": "設定でエージェントを接続してください" },
+    { "name": "chat_generating", "value": "生成中…" },
+    { "name": "chat_input_hint", "value": "メッセージ…" },
+    { "name": "chat_send", "value": "送信" },
+    { "name": "chat_stop", "value": "停止" }
+  ]
+}

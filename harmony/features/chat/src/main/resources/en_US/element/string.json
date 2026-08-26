@@ -1,0 +1,13 @@
+{
+  "string": [
+    { "name": "chat_title", "value": "Chat" },
+    { "name": "chat_connected", "value": "Connected" },
+    { "name": "chat_disconnected", "value": "Disconnected" },
+    { "name": "chat_empty_ready", "value": "Start a conversation" },
+    { "name": "chat_empty_no_agent", "value": "Connect an agent in Settings to begin" },
+    { "name": "chat_generating", "value": "Generating…" },
+    { "name": "chat_input_hint", "value": "Message…" },
+    { "name": "chat_send", "value": "Send" },
+    { "name": "chat_stop", "value": "Stop" }
+  ]
+}

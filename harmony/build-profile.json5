@@ -1,0 +1,41 @@
+{
+  // 工程级构建配置（对标 android/build.gradle + ios/project.yml）
+  // HarmonyOS NEXT (API 12+) 是当前目标，所有 HSP/HAP 共享此 SDK。
+  "app": {
+    "signingConfigs": [],
+    "products": [
+      {
+        "name": "default",
+        "signingConfig": "default",
+        "compatibleSdkVersion": "5.0.0(12)",
+        "runtimeOS": "HarmonyOS",
+        "targetSdkVersion": "5.0.0(12)",
+        "buildOption": {
+          "arkOptions": {
+            // ArkTS 严格模式：禁止 any/unknown 滥用，强制类型契约
+            "runtimeOnly": {
+              "sources": []
+            }
+          }
+        }
+      }
+    ],
+    "buildModeSet": [
+      { "name": "debug" },
+      { "name": "release" }
+    ]
+  },
+  // 模块清单：1 个 entry HAP + 1 个 common HSP + 8 个 features HSP
+  "modules": [
+    { "name": "entry", "srcPath": "./entry", "targets": [{ "name": "default" }] },
+    { "name": "common", "srcPath": "./common", "targets": [{ "name": "default" }] },
+    { "name": "features/chat", "srcPath": "./features/chat", "targets": [{ "name": "default" }] },
+    { "name": "features/agents", "srcPath": "./features/agents", "targets": [{ "name": "default" }] },
+    { "name": "features/activity", "srcPath": "./features/activity", "targets": [{ "name": "default" }] },
+    { "name": "features/marketplace", "srcPath": "./features/marketplace", "targets": [{ "name": "default" }] },
+    { "name": "features/settings", "srcPath": "./features/settings", "targets": [{ "name": "default" }] },
+    { "name": "features/workflow", "srcPath": "./features/workflow", "targets": [{ "name": "default" }] },
+    { "name": "features/mcp", "srcPath": "./features/mcp", "targets": [{ "name": "default" }] },
+    { "name": "features/compare", "srcPath": "./features/compare", "targets": [{ "name": "default" }] }
+  ]
+}

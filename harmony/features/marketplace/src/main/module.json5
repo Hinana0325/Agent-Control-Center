@@ -1,0 +1,10 @@
+{
+  "module": {
+    "name": "marketplace",
+    "type": "shared",
+    "description": "Agent Control Center Marketplace feature",
+    "deviceTypes": [ "phone", "tablet", "2in1" ],
+    "deliveryWithInstall": true,
+    "pages": ""
+  }
+}

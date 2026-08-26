@@ -1,0 +1,11 @@
+{
+  "name": "@features/workflow",
+  "version": "5.1.0",
+  "description": "Agent Control Center Workflow feature — DAG 工作流编排",
+  "main": "Index.ets",
+  "author": "Hinana0325",
+  "license": "MIT",
+  "dependencies": {
+    "common": "file:../../common"
+  }
+}

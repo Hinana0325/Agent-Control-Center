@@ -1,0 +1,12 @@
+{
+  "string": [
+    { "name": "workflow_title", "value": "Workflow" },
+    { "name": "workflow_input_hint", "value": "Workflow input…" },
+    { "name": "workflow_run", "value": "Run" },
+    { "name": "workflow_running", "value": "Running…" },
+    { "name": "workflow_select_hint", "value": "Select a template and run" },
+    { "name": "workflow_history", "value": "History" },
+    { "name": "workflow_no_runs", "value": "No runs yet" },
+    { "name": "workflow_nodes_suffix", "value": " nodes" }
+  ]
+}

@@ -1,0 +1,32 @@
+# 鸿蒙工程忽略项（对标 .gitignore 的 ios/android 子目录）
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# 构建产物
+build/
+**/build/
+*.hap
+*.hsp
+*.har
+
+# ohpm 缓存与依赖
+.ohpm/
+oh_modules/
+**/oh_modules/
+
+# 本地配置
+local.properties
+*.local
+
+# 签名（密钥不进版本控制）
+*.p12
+*.cer
+*.jks
+signConfig/
+
+# 临时与日志
+*.log
+.DS_Store

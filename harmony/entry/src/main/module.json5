@@ -1,0 +1,51 @@
+{
+  // entry 模块清单（对标 AndroidManifest.xml）
+  "module": {
+    "name": "entry",
+    "type": "entry",
+    "description": "Agent Control Center 主入口",
+    "mainElement": "EntryAbility",
+    "deviceTypes": [
+      "phone",
+      "tablet",
+      "2in1"
+    ],
+    "deliveryWithInstall": true,
+    "installationFree": false,
+    "pages": "$profile:main_pages",
+    "abilities": [
+      {
+        "name": "EntryAbility",
+        "srcEntry": "./ets/entryability/EntryAbility.ets",
+        "description": "Agent Control Center 主入口 Ability",
+        "icon": "$media:app_icon",
+        "label": "$string:app_name",
+        "startWindowIcon": "$media:start_icon",
+        "startWindowBackground": "$color:start_window_background",
+        "exported": true,
+        "skills": [
+          {
+            "entities": ["entity.system.home"],
+            "actions": ["action.system.home"]
+          }
+        ],
+        // H5 后台保活：DATA_TRANSFER 长时任务模式（Agent 连接数据传输场景）
+        "backgroundModes": [
+          "dataTransfer"
+        ]
+      }
+    ],
+    // H5 后台保活：长时任务申请权限（对齐 Android FOREGROUND_SERVICE）
+    "requestPermissions": [
+      {
+        "name": "ohos.permission.KEEP_BACKGROUND_RUNNING",
+        "reason": "$string:keep_background_reason",
+        "usedScene": {
+          "abilities": ["EntryAbility"],
+          "when": "inuse"
+        }
+      }
+    ],
+    "abilitiesExt": []
+  }
+}

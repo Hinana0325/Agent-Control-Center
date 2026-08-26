@@ -1,0 +1,15 @@
+{
+  // chat feature HSP 清单。HSP 无入口 Ability，被 entry 引用。
+  "module": {
+    "name": "chat",
+    "type": "shared",
+    "description": "Agent Control Center Chat feature",
+    "deviceTypes": [
+      "phone",
+      "tablet",
+      "2in1"
+    ],
+    "deliveryWithInstall": true,
+    "pages": ""
+  }
+}

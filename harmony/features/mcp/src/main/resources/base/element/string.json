@@ -1,0 +1,20 @@
+{
+  "string": [
+    { "name": "mcp_title", "value": "MCP Servers" },
+    { "name": "mcp_empty", "value": "No MCP servers configured" },
+    { "name": "mcp_connect", "value": "Connect" },
+    { "name": "mcp_disconnect", "value": "Disconnect" },
+    { "name": "mcp_refresh", "value": "Refresh" },
+    { "name": "mcp_delete", "value": "Delete" },
+    { "name": "mcp_add", "value": "Add Server" },
+    { "name": "mcp_cancel", "value": "Cancel" },
+    { "name": "mcp_confirm", "value": "Add" },
+    { "name": "mcp_name_hint", "value": "Server name" },
+    { "name": "mcp_apikey_hint", "value": "API key (optional)" },
+    { "name": "mcp_state_connected", "value": "Connected" },
+    { "name": "mcp_state_connecting", "value": "Connecting…" },
+    { "name": "mcp_state_failed", "value": "Failed" },
+    { "name": "mcp_state_disconnected", "value": "Disconnected" },
+    { "name": "mcp_tools_title", "value": "Discovered Tools" }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "apiType": "stageMode",
+  "buildOption": {
+    "arkOptions": {
+      "runtimeOnly": {
+        "sources": []
+      }
+    }
+  },
+  "buildModeSet": [
+    { "name": "debug" },
+    { "name": "release" }
+  ],
+  "targets": [
+    { "name": "default", "runtimeOS": "HarmonyOS" }
+  ]
+}

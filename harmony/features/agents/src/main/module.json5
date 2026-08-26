@@ -1,0 +1,10 @@
+{
+  "module": {
+    "name": "agents",
+    "type": "shared",
+    "description": "Agent Control Center Agents feature",
+    "deviceTypes": [ "phone", "tablet", "2in1" ],
+    "deliveryWithInstall": true,
+    "pages": ""
+  }
+}

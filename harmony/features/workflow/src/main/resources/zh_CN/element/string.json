@@ -1,0 +1,12 @@
+{
+  "string": [
+    { "name": "workflow_title", "value": "工作流" },
+    { "name": "workflow_input_hint", "value": "输入工作流内容…" },
+    { "name": "workflow_run", "value": "运行" },
+    { "name": "workflow_running", "value": "运行中…" },
+    { "name": "workflow_select_hint", "value": "选择模板并运行" },
+    { "name": "workflow_history", "value": "历史" },
+    { "name": "workflow_no_runs", "value": "暂无记录" },
+    { "name": "workflow_nodes_suffix", "value": " 个节点" }
+  ]
+}

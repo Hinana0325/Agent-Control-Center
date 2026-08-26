@@ -1,0 +1,13 @@
+{
+  "string": [
+    { "name": "app_name", "value": "Agent Control Center" },
+    { "name": "nav_chat", "value": "聊天" },
+    { "name": "nav_agents", "value": "智能体" },
+    { "name": "nav_activity", "value": "活动" },
+    { "name": "nav_marketplace", "value": "市场" },
+    { "name": "nav_settings", "value": "设置" },
+    { "name": "coming_soon", "value": "敬请期待" },
+    { "name": "coming_soon_desc", "value": "该功能正在鸿蒙端开发中。" },
+    { "name": "keep_background_reason", "value": "应用后台运行时保持智能体连接" }
+  ]
+}

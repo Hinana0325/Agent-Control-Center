@@ -1,0 +1,11 @@
+{
+  "name": "@features/compare",
+  "version": "5.1.0",
+  "description": "Agent Control Center Compare feature — 多 Agent 并行对比",
+  "main": "Index.ets",
+  "author": "Hinana0325",
+  "license": "MIT",
+  "dependencies": {
+    "common": "file:../../common"
+  }
+}

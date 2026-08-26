@@ -1,0 +1,12 @@
+{
+  // common HSP 模块（对标 android core/ + data/ + transport/ + runtime/ 共享层）
+  // 作为 entry 与所有 features 的公共依赖：protocol / security / transport /
+  // persistence / runtime / mcp / plugin / theme / util。
+  "name": "common",
+  "version": "5.1.0",
+  "description": "Agent Control Center 公共 HSP — 协议层 + 安全 + 传输 + 持久化 + 主题",
+  "main": "Index.ets",
+  "author": "Hinana0325",
+  "license": "MIT",
+  "dependencies": {}
+}

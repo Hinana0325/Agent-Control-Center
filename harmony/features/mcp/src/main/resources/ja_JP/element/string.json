@@ -1,0 +1,20 @@
+{
+  "string": [
+    { "name": "mcp_title", "value": "MCPサーバー" },
+    { "name": "mcp_empty", "value": "MCPサーバーが未設定です" },
+    { "name": "mcp_connect", "value": "接続" },
+    { "name": "mcp_disconnect", "value": "切断" },
+    { "name": "mcp_refresh", "value": "更新" },
+    { "name": "mcp_delete", "value": "削除" },
+    { "name": "mcp_add", "value": "サーバー追加" },
+    { "name": "mcp_cancel", "value": "キャンセル" },
+    { "name": "mcp_confirm", "value": "追加" },
+    { "name": "mcp_name_hint", "value": "サーバー名" },
+    { "name": "mcp_apikey_hint", "value": "APIキー（任意）" },
+    { "name": "mcp_state_connected", "value": "接続済み" },
+    { "name": "mcp_state_connecting", "value": "接続中…" },
+    { "name": "mcp_state_failed", "value": "失敗" },
+    { "name": "mcp_state_disconnected", "value": "未接続" },
+    { "name": "mcp_tools_title", "value": "検出ツール" }
+  ]
+}
