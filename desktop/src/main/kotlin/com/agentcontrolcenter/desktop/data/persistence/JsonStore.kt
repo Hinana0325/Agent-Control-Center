@@ -120,13 +120,26 @@ class JsonStore(
         }
     }
 
-    /** 非原子化写入的调用点必须已持有 [mutex]。 */
+    /**
+     * 非原子化写入的调用点必须已持有 [mutex]。
+     *
+     * 原子性实现：先写 .tmp 再 Files.move(REPLACE_EXISTING + ATOMIC_MOVE)。
+     * 注：File.renameTo 在 Windows 上目标存在时必然失败（会退化成非原子直写），
+     * NIO Files.move 才能跨平台原子替换（扫描修复项 M2）。
+     */
     private inline fun <reified T> writeJsonLocked(file: File, value: T) {
+        val payload = json.encodeToString(value)
         val tmp = File(file.parentFile, file.name + ".tmp")
-        // 先写临时文件再原子重命名，避免断电/崩溃产生半截 JSON
-        tmp.writeText(json.encodeToString(value))
-        if (!tmp.renameTo(file)) {
-            file.writeText(json.encodeToString(value))
+        tmp.writeText(payload)
+        try {
+            java.nio.file.Files.move(
+                tmp.toPath(), file.toPath(),
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                java.nio.file.StandardCopyOption.ATOMIC_MOVE
+            )
+        } catch (_: Exception) {
+            // 文件系统不支持 ATOMIC_MOVE 时退化为直写（保数据不保原子性）
+            file.writeText(payload)
             tmp.delete()
         }
     }

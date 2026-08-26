@@ -18,8 +18,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -69,10 +73,18 @@ fun SettingsPane(store: AppStore) {
         }
 
         SettingsSection(Strings.t("settings.security")) {
+            // 防抖 500ms：避免每个按键触发一次磁盘写 + E2E 热更新（扫描修复项 M1）
+            var passphrase by remember { mutableStateOf(settings.e2ePassphrase) }
+            LaunchedEffect(passphrase) {
+                if (passphrase != settings.e2ePassphrase) {
+                    kotlinx.coroutines.delay(500)
+                    store.updateSettings { it.copy(e2ePassphrase = passphrase) }
+                }
+            }
             Column(Modifier.padding(vertical = 8.dp)) {
                 OutlinedTextField(
-                    value = settings.e2ePassphrase,
-                    onValueChange = { value -> store.updateSettings { it.copy(e2ePassphrase = value) } },
+                    value = passphrase,
+                    onValueChange = { passphrase = it },
                     label = { Text(Strings.t("settings.e2e_passphrase")) },
                     visualTransformation = PasswordVisualTransformation(),
                     singleLine = true,

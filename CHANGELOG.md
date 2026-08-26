@@ -30,6 +30,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **README.md**：六端化（架构图 + 技术栈四列对照 + 项目结构 + 构建运行 + CI 清单）。
 - **desktop/README.md**（新增）：桌面端架构、设计取舍、路线图。
 
+#### 全面代码扫描修复（desktop + CI）
+
+- **C1 窗口尺寸被重置**：[Main.kt] `window.size` 写在 Window content 里，托盘显隐切换（visible 变化）触发 content 重组时会把用户手动缩放的窗口重置回 1200x800。改用 `rememberWindowState` 管理初始尺寸。
+- **C2 CI Windows 矩阵崩溃**：`chmod +x gradlew` 步骤在 windows-latest（pwsh 无 chmod）必然失败；gradlew 已按 100755 提交，直接移除该步骤。
+- **C3 Release 误收测试报告**：安装包产物名 `desktop-{format}` 与测试报告产物 `desktop-test-reports-{os}` 同为 `desktop-*` 前缀，Tag 发布时 download pattern 会把测试报告一并传上 GitHub Release。改名 `desktop-installer-{format}`。
+- **M1 设置按键级落盘**：E2E 口令输入框每敲一个字符就触发一次磁盘写 + 传输层热更新，加 500ms 防抖。
+- **M2 Windows 非原子写**：`File.renameTo` 在 Windows 上目标存在时必然失败，原子写静默退化为直写；改用 NIO `Files.move(REPLACE_EXISTING + ATOMIC_MOVE)`。
+- **M3 死按钮**：聊天输入栏流式期间的 Stop 按钮 `enabled=false` 无任何行为，移除（流式状态由气泡 ▍ 游标指示）。
+- **M4 无托盘环境崩溃风险**：部分裁剪型 Linux WM 无系统托盘，`Tray` 可抛异常，加 `SystemTray.isSupported()` 守卫。
+
 ## [5.1.0] - 2026-08-26
 
 ### 三原生架构 + 厂商适配 — HarmonyOS 第三原生端 & 金标联盟四厂商系统特性

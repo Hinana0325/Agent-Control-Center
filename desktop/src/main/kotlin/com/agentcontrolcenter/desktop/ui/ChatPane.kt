@@ -24,7 +24,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -129,26 +128,19 @@ fun ChatPane(store: AppStore) {
                     })
                 )
                 Spacer(Modifier.width(8.dp))
-                if (isStreaming) {
-                    TextButton(onClick = { /* v1: HTTP 流由传输层自行收尾 */ }, enabled = false) {
-                        Icon(Icons.Filled.Stop, contentDescription = Strings.t("chat.stop"))
-                        Spacer(Modifier.width(4.dp))
-                        Text(Strings.t("chat.stop"))
-                    }
-                } else {
-                    TextButton(
-                        onClick = {
-                            if (input.isNotBlank()) {
-                                store.sendMessage(input)
-                                input = ""
-                            }
-                        },
-                        enabled = connected && input.isNotBlank()
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = Strings.t("chat.send"))
-                        Spacer(Modifier.width(4.dp))
-                        Text(Strings.t("chat.send"))
-                    }
+                // 流式期间 Send 禁用（输入框同时禁用，气泡内 ▍ 游标指示生成中）
+                TextButton(
+                    onClick = {
+                        if (input.isNotBlank()) {
+                            store.sendMessage(input)
+                            input = ""
+                        }
+                    },
+                    enabled = connected && input.isNotBlank() && !isStreaming
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = Strings.t("chat.send"))
+                    Spacer(Modifier.width(4.dp))
+                    Text(Strings.t("chat.send"))
                 }
             }
         }
