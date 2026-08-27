@@ -10,6 +10,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.IBinder
 import android.os.Parcel
+import android.os.RemoteException
 import android.util.Log
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
@@ -116,7 +117,9 @@ object FairMemoryManager {
                 context.registerReceiver(receiver, filter, null, handler)
             }
             Log.i(TAG, "fair-memory receiver registered (TRIM/KILL)")
-        } catch (e: Exception) {
+        } catch (e: SecurityException) {
+            // API 33+ 广播注册标志缺失/非法时系统抛出；本处已显式 RECEIVER_EXPORTED，
+            // 仅保留厂商 ROM 差异化场景下的兜底日志
             Log.w(TAG, "registerReceiver failed: ${e.message}")
         }
     }
@@ -165,7 +168,14 @@ object FairMemoryManager {
         }
     }
 
-    /** 执行全部释放钩子；单钩子异常不阻断其余钩子与 binder 回调。 */
+    /**
+     * 执行全部释放钩子；单钩子异常不阻断其余钩子与 binder 回调。
+     *
+     * @Suppress 说明：这里是刻意设计的故障隔离屏障 —— 钩子由应用内各组件注册，
+     * release() 的异常类型不可枚举，且单个钩子失败不得阻断其余钩子与 3s 超时前的
+     * binder 回调，必须捕获 Exception 全量兜底。
+     */
+    @Suppress("TooGenericExceptionCaught")
     private fun runHooks(action: String) {
         for (hook in hooks) {
             try {
@@ -182,7 +192,7 @@ object FairMemoryManager {
             if (remote == null) {
                 try {
                     callback.linkToDeath(deathRecipient, 0)
-                } catch (e: Exception) {
+                } catch (e: RemoteException) {
                     Log.w(TAG, "linkToDeath failed: ${e.message}")
                 }
                 remote = callback
@@ -217,7 +227,8 @@ object FairMemoryManager {
             data.writeBundle(Bundle())
             binder.transact(TRANSACTION_EXCEPTION_REPLY, data, reply, IBinder.FLAG_ONEWAY)
             reply.readException()
-        } catch (e: Exception) {
+        } catch (e: RemoteException) {
+            // binder 通道断开（系统查杀流程已结束/进程死亡），回调送达失败仅记日志
             Log.e(TAG, "reply failed: ${e.message}")
         } finally {
             reply.recycle()

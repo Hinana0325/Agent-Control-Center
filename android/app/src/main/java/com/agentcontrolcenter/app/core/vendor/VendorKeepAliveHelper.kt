@@ -1,5 +1,6 @@
 package com.agentcontrolcenter.app.core.vendor
 
+import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -120,14 +121,13 @@ object VendorKeepAliveHelper {
     fun requestIgnoreBatteryOptimizations(context: Context): Boolean {
         if (isIgnoringBatteryOptimizations(context)) return true
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true
-        return try {
-            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                data = Uri.parse("package:${context.packageName}")
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(intent)
+        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+            data = Uri.parse("package:${context.packageName}")
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        return if (startActivitySafely(context, intent)) {
             true
-        } catch (e: Exception) {
+        } else {
             // 极少数 ROM 禁止第三方调用该 Intent（Play 政策限制场景），降级到电池优化列表页
             openBatteryOptimizationList(context)
         }
@@ -136,14 +136,11 @@ object VendorKeepAliveHelper {
     /**
      * 跳转系统电池优化列表页（REQUEST 对话框被拒绝时的降级路径）。
      */
-    fun openBatteryOptimizationList(context: Context): Boolean = try {
+    fun openBatteryOptimizationList(context: Context): Boolean {
         val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
-        context.startActivity(intent)
-        true
-    } catch (e: Exception) {
-        false
+        return startActivitySafely(context, intent)
     }
 
     /**
@@ -164,13 +161,8 @@ object VendorKeepAliveHelper {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             if (intent.resolveActivity(context.packageManager) != null) {
-                try {
-                    context.startActivity(intent)
-                    return true
-                } catch (e: Exception) {
-                    // resolveActivity 通过但启动仍失败（权限/裁剪 ROM），尝试下一个候选
-                    continue
-                }
+                // resolveActivity 通过但启动仍失败（权限/裁剪 ROM），尝试下一个候选
+                if (startActivitySafely(context, intent)) return true
             }
         }
         // 兜底：应用详情页（自启动入口也在该页的「权限管理」子页内）
@@ -183,14 +175,27 @@ object VendorKeepAliveHelper {
      * 该页同时是「省电策略」入口（设置 → 应用管理 → 本应用 → 省电策略 → 无限制）。
      * 省电策略无公开 API 可查询/修改，只能引导用户到此页手动设置。
      */
-    fun openAppDetailsSettings(context: Context): Boolean = try {
+    fun openAppDetailsSettings(context: Context): Boolean {
         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
             data = Uri.parse("package:${context.packageName}")
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
+        return startActivitySafely(context, intent)
+    }
+
+    /**
+     * 安全发起 Activity 跳转。
+     *
+     * startActivity 的文档化失败模式仅两类，捕获后返回 false 交由调用方降级：
+     *  - [ActivityNotFoundException]：目标组件不存在（OEM 裁剪 ROM 上最常见）
+     *  - [SecurityException]：权限拒绝（厂商限制第三方跳转系统页）
+     */
+    private fun startActivitySafely(context: Context, intent: Intent): Boolean = try {
         context.startActivity(intent)
         true
-    } catch (e: Exception) {
+    } catch (_: ActivityNotFoundException) {
+        false
+    } catch (_: SecurityException) {
         false
     }
 }

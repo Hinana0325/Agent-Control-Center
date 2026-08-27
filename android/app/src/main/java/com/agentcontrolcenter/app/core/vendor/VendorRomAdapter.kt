@@ -141,7 +141,9 @@ object VendorRomAdapter {
         val clazz = Class.forName("android.os.SystemProperties")
         val method = clazz.getMethod("get", String::class.java)
         method.invoke(null, key) as? String
-    } catch (e: Exception) {
+    } catch (_: ReflectiveOperationException) {
+        // Class.forName / getMethod / invoke 的全部失败模式：
+        // 类不存在（非标准 ROM）、反射受限、方法调用失败，统一返回 null
         null
     }
 }

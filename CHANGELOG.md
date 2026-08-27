@@ -25,6 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`UrlValidator` ws/wss scheme 误杀（Android + Desktop）**：JVM 的 `java.net.URL` 未注册 ws/wss 协议 handler，`validate("ws://…")` 一律抛 MalformedURLException 返回 null——WebSocketTransport 的 SSRF 校验会把**所有 WebSocket URL** 误判为「blocked URL」导致无法连接。修复：解析前规范化 ws/wss → http/https 等价形式（scheme 白名单仍按原值校验）。桌面端测试覆盖 ws:// 通过。
 
+#### Fixed（Android CI — Detekt）
+
+- **厂商适配代码 `TooGenericExceptionCaught` 6 处**：v5.1.0 新增的 vendor 模块 4 文件未过 detekt 质量门。按失败模式逐处收窄 catch 类型：`VendorRomAdapter` 反射读取 SystemProperties → `ReflectiveOperationException`（覆盖 ClassNotFound/NoSuchMethod/IllegalAccess/InvocationTarget 全家族）；`VendorKeepAliveHelper` 跳转厂商设置页 → 提取 `startActivitySafely` 捕获 `ActivityNotFoundException` + `SecurityException`；`FairMemoryManager` 广播注册/`linkToDeath`/`reply` transact → `SecurityException`/`RemoteException`，`runHooks` 为故障隔离屏障保留宽捕获并以 `@Suppress` 显式声明理由；`BootCompletedReceiver` 协程 → `CancellationException` 重抛 + `SQLiteException`/`IllegalStateException` 分类记录（FGS 后台启动限制子类异常即 `IllegalStateException` 家族）。
+
 #### 文档
 
 - **README.md**：六端化（架构图 + 技术栈四列对照 + 项目结构 + 构建运行 + CI 清单）。

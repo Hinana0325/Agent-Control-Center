@@ -3,10 +3,12 @@ package com.agentcontrolcenter.app.core.vendor
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.database.sqlite.SQLiteException
 import android.util.Log
 import com.agentcontrolcenter.app.AgentConnectionService
 import com.agentcontrolcenter.app.data.repository.ChatRepository
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -61,7 +63,14 @@ class BootCompletedReceiver : BroadcastReceiver() {
                 } else {
                     Log.i(TAG, "$action: no saved agent config, skip auto start")
                 }
-            } catch (e: Exception) {
+            } catch (e: CancellationException) {
+                // scope.cancel() 触发的正常取消不是启动失败；finally 保证 pendingResult.finish()
+                throw e
+            } catch (e: SQLiteException) {
+                // 配置查询失败（数据库损坏/磁盘异常）：无配置视为未配置，跳过自启动
+                Log.w(TAG, "$action: auto start check failed: ${e.javaClass.simpleName}: ${e.message}")
+            } catch (e: IllegalStateException) {
+                // 前台服务启动受限（Android 12+ FGS 限制的各类子类异常）或 Room 迁移缺失
                 Log.w(TAG, "$action: auto start check failed: ${e.javaClass.simpleName}: ${e.message}")
             } finally {
                 pendingResult.finish()
