@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
@@ -54,7 +54,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
@@ -97,7 +97,7 @@ jobs:
         # JDK 17 会让 Gradle 9 直接启动失败（UnsupportedClassVersionError）。
         # 项目编译目标仍是 Java 17（compileOptions sourceCompatibility/targetCompatibility），
         # 这里 JDK 21 仅用于运行 Gradle 本身。
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
