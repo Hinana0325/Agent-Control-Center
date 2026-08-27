@@ -62,8 +62,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.agentcontrolcenter.app.ios
         PRODUCT_NAME: AgentControlCenter
         # C1: 与 version.properties (5.1.0 / code 43) 单一事实来源对齐。
-        MARKETING_VERSION: "5.1.0"
-        CURRENT_PROJECT_VERSION: "43"
+        MARKETING_VERSION: "5.2.0"
+        CURRENT_PROJECT_VERSION: "44"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ENABLE_PREVIEWS: YES
@@ -98,8 +98,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.agentcontrolcenter.app.ios.WidgetExtension
         PRODUCT_NAME: AgentControlCenterWidgetExtension
         # C1: 与 version.properties (5.1.0 / code 43) 单一事实来源对齐。
-        MARKETING_VERSION: "5.1.0"
-        CURRENT_PROJECT_VERSION: "43"
+        MARKETING_VERSION: "5.2.0"
+        CURRENT_PROJECT_VERSION: "44"
         SKIP_INSTALL: YES
         IPHONEOS_DEPLOYMENT_TARGET: "18.0"
         CODE_SIGN_ENTITLEMENTS: AgentControlCenter/Widget/AgentControlCenterWidgetExtension.entitlements
