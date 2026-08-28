@@ -38,6 +38,45 @@ jobs:
         run: ./gradlew test --console=plain
         working-directory: desktop
 
+      # 把失败用例直接写进作业摘要。
+      #
+      # 三平台矩阵里单个 OS 失败时，默认只能去翻 actions 产物（JUnit XML）
+      # 或逐页日志才能看到断言内容。摘要会渲染在 check-run 的 output 里，
+      # 既能在 Actions 页面直接读到，也能通过 API 取到，不必下载产物。
+      #
+      # 另一个作用同样重要：没有任何 <failure>/<error> 时，说明失败发生在
+      # 测试体之外（编译、Gradle 任务本身或超时），这本身就是关键诊断信息。
+      - name: Surface test failures in job summary
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo '### ❌ 失败用例（desktop JUnit XML）'
+          } >> "$GITHUB_STEP_SUMMARY"
+          found=0
+          # 注意：本步骤已设 working-directory: desktop，路径须相对该目录
+          for f in build/test-results/test/*.xml; do
+            [ -f "$f" ] || continue
+            if grep -q '<failure\|<error' "$f"; then
+              found=1
+              {
+                echo
+                echo "#### \`$f\`"
+                echo '```xml'
+                cat "$f"
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+          if [ "$found" -eq 0 ]; then
+            {
+              echo
+              echo '_未发现含 `<failure>` / `<error>` 的 JUnit XML —— 失败发生在测试体之外_'
+              echo '_（编译错误、Gradle 任务失败、超时，或测试根本没跑起来）。_'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+        working-directory: desktop
+
       - name: Package (${{ matrix.format }})
         run: ./gradlew packageDistributionForCurrentOS --console=plain
         working-directory: desktop
