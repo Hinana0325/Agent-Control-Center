@@ -38,14 +38,18 @@ jobs:
         run: ./gradlew test --console=plain
         working-directory: desktop
 
-      # 把失败用例直接写进作业摘要。
+      # 让单平台失败自证其因。
       #
-      # 三平台矩阵里单个 OS 失败时，默认只能去翻 actions 产物（JUnit XML）
-      # 或逐页日志才能看到断言内容。摘要会渲染在 check-run 的 output 里，
-      # 既能在 Actions 页面直接读到，也能通过 API 取到，不必下载产物。
+      # 三平台矩阵里某个 OS 失败时，默认只能下载 actions 产物（JUnit XML）
+      # 或逐页翻日志才能看到断言内容，二者都无法从受限网络环境访问。
+      # 这里同时产出两份可直接读到的证据：
       #
-      # 另一个作用同样重要：没有任何 <failure>/<error> 时，说明失败发生在
-      # 测试体之外（编译、Gradle 任务本身或超时），这本身就是关键诊断信息。
+      #   · 作业摘要（$GITHUB_STEP_SUMMARY）—— Actions 页面直接可读；
+      #   · ::error:: 工作流命令 → check-run annotations —— 可通过 API 读取
+      #     （/repos/{o}/{r}/check-runs/{id}/annotations），无需产物或日志域。
+      #
+      # 「没有任何 <failure>/<error>」与「有」同样重要：前者说明失败发生在
+      # 测试体之外（编译、Gradle 任务本身、超时或测试未运行）。
       - name: Surface test failures in job summary
         if: failure()
         shell: bash
@@ -75,6 +79,53 @@ jobs:
               echo '_（编译错误、Gradle 任务失败、超时，或测试根本没跑起来）。_'
             } >> "$GITHUB_STEP_SUMMARY"
           fi
+        working-directory: desktop
+
+      - name: Emit failing tests as annotations
+        if: failure()
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+
+          # GitHub 每个 step 的 error 级注解上限为 10 条，超出会被丢弃。
+          MAX = 10
+          emitted = 0
+          paths = sorted(glob.glob("build/test-results/test/*.xml"))
+
+          def esc(s: str) -> str:
+              # 工作流命令的 data 字段必须转义 % 与换行
+              return (s or "").replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+
+          for path in paths:
+              try:
+                  root = ET.parse(path).getroot()
+              except Exception as exc:
+                  if emitted < MAX:
+                      emitted += 1
+                      print(f"::error title=unparsable {path}::{esc(str(exc))[:600]}")
+                  continue
+              for tc in root.iter("testcase"):
+                  cls = tc.get("classname", "?")
+                  name = tc.get("name", "?")
+                  for tag in ("failure", "error"):
+                      for node in tc.findall(tag):
+                          if emitted >= MAX:
+                              break
+                          emitted += 1
+                          body = ((node.get("message") or "") + " || " + (node.text or ""))[:800]
+                          print(f"::error title={cls}.{name}::{esc(body)}")
+
+          if emitted == 0:
+              print(
+                  "::error title=no-junit-failure::"
+                  "没有 <failure>/<error>：失败发生在测试体之外"
+                  "（编译 / Gradle 任务 / 超时 / 测试未运行）。"
+                  f"扫描到的 XML 数：{len(paths)}"
+              )
+          else:
+              print(f"已发出 {emitted} 条失败注解")
+          PY
         working-directory: desktop
 
       - name: Package (${{ matrix.format }})
