@@ -3,8 +3,8 @@
 > 仓库：`Hinana0325/Agent-Control-Center`
 > 包名：`com.agentcontrolcenter.app`（Android）/ `com.agentcontrolcenter.app.ios`（iOS）
 > bundleID：`com.agentcontrolcenter.desktop`（桌面）
-> 当前版本：**v5.2.0**（versionCode 44，单一事实来源 `version.properties`）
-> 最后核对：v5.2.0
+> 当前版本：**v5.3.0**（versionCode 45，单一事实来源 `version.properties`）
+> 最后核对：v5.3.0
 
 ## 1. 总览
 

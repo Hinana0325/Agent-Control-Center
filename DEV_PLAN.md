@@ -1,20 +1,20 @@
 # Agent Control Center 开发计划
 
 > 仓库：`Hinana0325/Agent-Control-Center`
-> 当前版本：**v5.2.0**（versionCode 44）
+> 当前版本：**v5.3.0**（versionCode 45）
 > 本文件记录 **v5.3.0 起**的 Sprint 规划。v2.2 → v5.2 的版本演进历史见 [`CHANGELOG.md`](CHANGELOG.md)。
 > 策略依据：[`docs/product-strategy.md`](docs/product-strategy.md)（单一事实来源）
 > 架构依据：[`docs/architecture.md`](docs/architecture.md)
 
 ---
 
-## 当前状态（v5.2.0）
+## 当前状态（v5.3.0）
 
 六端原生格局已在 v5.2.0 铺完：Android / iOS / HarmonyOS + Windows / macOS / Linux。
 
 | 维度 | 数据 |
 |:-----|:-----|
-| 版本 | v5.2.0（versionCode 44，单一事实来源 `version.properties`） |
+| 版本 | v5.3.0（versionCode 45，单一事实来源 `version.properties`） |
 | 架构 | 六端原生，共享 `protocol/` 永久统一协议层 |
 | 协议层 | 11 JSON Schema + 5 传输协议文档 |
 | 代码规模 | Android 261 / Harmony 139 / iOS 114 / Desktop 35 文件 |

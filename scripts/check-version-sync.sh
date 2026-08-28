@@ -25,6 +25,7 @@ IOS_YML="$REPO_ROOT/ios/project.yml"
 ANDROID_GRADLE="$REPO_ROOT/android/app/build.gradle"
 DESKTOP_GRADLE="$REPO_ROOT/desktop/build.gradle.kts"
 ROOT_PACKAGE_JSON="$REPO_ROOT/package.json"
+DESKTOP_STRINGS="$REPO_ROOT/desktop/src/main/kotlin/com/agentcontrolcenter/desktop/app/Strings.kt"
 
 failures=0
 
@@ -165,7 +166,24 @@ if [[ $pkg_ok -eq 1 ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# 6. Summary
+# 6. desktop Strings.kt — const val APP_VERSION = "5.3.0"
+#    This is the string the Settings → About screen actually renders. It was
+#    hardcoded separately in the en/ and zh/ maps, so bumping only the build
+#    files shipped a package labelled 5.3.0 whose About screen still said
+#    5.2.0. Now a single constant, checked here so it cannot drift again.
+# ---------------------------------------------------------------------------
+str_match=$(grep -nE '^[[:space:]]*const val APP_VERSION[[:space:]]*=' "$DESKTOP_STRINGS" | head -1 || true)
+str_lineno=$(printf '%s' "$str_match" | sed -E 's/^([0-9]+):.*/\1/' || true)
+str_value=$(printf '%s' "$str_match" | sed -E 's/.*=[[:space:]]*"([^"]*)".*/\1/' || true)
+
+str_ok=1
+check_field "desktop Strings.kt" "$str_lineno" "APP_VERSION" "$str_value" "$versionName" || str_ok=0
+if [[ $str_ok -eq 1 ]]; then
+    echo "✓ desktop Strings.kt: APP_VERSION=$str_value (设置页展示版本)"
+fi
+
+# ---------------------------------------------------------------------------
+# 7. Summary
 # ---------------------------------------------------------------------------
 if [[ $failures -eq 0 ]]; then
     echo "All version references are in sync."

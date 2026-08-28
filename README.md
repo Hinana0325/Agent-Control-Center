@@ -1,4 +1,4 @@
-# Agent Control Center v5.2.0
+# Agent Control Center v5.3.0
 
 **多端多 Agent 控制中心** —— Android（Kotlin + Jetpack Compose）、iOS（Swift + SwiftUI）、HarmonyOS（ArkTS + ArkUI）三移动原生端 + Windows/macOS/Linux 桌面端（Kotlin + Compose Multiplatform），共享永久统一协议层，连接并远程操控多种 AI Agent（Hermes / OpenCode / OpenAI 兼容 / ComfyUI / 本地模型）。
 

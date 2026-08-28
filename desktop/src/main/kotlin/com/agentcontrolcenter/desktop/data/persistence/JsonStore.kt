@@ -138,9 +138,22 @@ class JsonStore(
                 java.nio.file.StandardCopyOption.ATOMIC_MOVE
             )
         } catch (_: Exception) {
-            // 文件系统不支持 ATOMIC_MOVE 时退化为直写（保数据不保原子性）
-            file.writeText(payload)
-            tmp.delete()
+            // 先退化为「非原子替换」：目标卷不支持 ATOMIC_MOVE 时，纯
+            // REPLACE_EXISTING 的 move 在多数文件系统上仍是 rename，读取者
+            // 看不到中间态。
+            //
+            // 只有这条路也失败，才退化为直写——而 `file.writeText()` 会先把
+            // 目标文件**截断为空**再写入，并发读取者（含启动期的迁移轮询）
+            // 可能读到空文件。直写是最后手段，不是第一 fallback。
+            try {
+                java.nio.file.Files.move(
+                    tmp.toPath(), file.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                )
+            } catch (_: Exception) {
+                file.writeText(payload)
+                tmp.delete()
+            }
         }
     }
 }

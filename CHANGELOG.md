@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.3.0] - 2026-08-29
+
 ### 文档 — v5.3.0「可信化」规划重新锚定（Sprint 16.3 / 16.4）
 
 v4.8 → v5.2 四个版本持续横向扩端（新增 HarmonyOS 与桌面三端），但规划文档全部停更在 v4.8.0，与实际六端格局脱节。本次将规划体系重新锚定到 v5.2.0 现实。
@@ -82,6 +84,48 @@ bash scripts/fetch-tls-pins.sh api.openai.com
 
 - **证书锁定用户开关从未实现**：`protocol/transport/tls-pinning.md` §5.1 与 §7 均记载「Settings → 安全 → 证书锁定」开关，但 2026-08 全仓检索（`.kt` / `.swift` / `.xml` / `.ets`）确认**双端均无相关 UI**，pinning 代码只存在于 transport 层。这把「填错 pin」的后果从「部分用户受影响」放大为「全量用户功能不可用且无自救手段」——建议在填 pin 前先补上该开关。
 - **文档与代码不符的两处已就地修正**：上述开关，以及 §7「用户可自行关闭锁定」的应急预案描述。
+
+### Fixed — Android 自适应图标分层异常（v5.3.0，任务「图标异常」）
+
+用户反馈「安卓图标异常」。实测（读取像素而非读注释）确认三个真实缺陷：
+
+- **三份图标字节完全相同**：五档密度（mdpi / hdpi / xhdpi / xxhdpi / xxxhdpi）下，`ic_launcher.png`、`ic_launcher_foreground.png`、`ic_launcher_round.png` 的 md5 逐一比对**完全一致**——adaptive icon 的分层结构从未真正建立。
+- **前景层完全不透明**：`ic_launcher_foreground.png` 四角 alpha 均为 255（100% 不透明）。前景层整块盖住 `background` 层，adaptive icon 退化为普通图标；且内容顶到画布边缘，会被各家启动器的圆形/圆角方形遮罩裁切。Adaptive icon 规范要求前景层背景透明、内容收在 108dp 画布中央 66dp 安全区内。
+- **`ic_launcher_round.png` 未做圆形裁切**：文件名声明为圆形，实为方形图，在圆形图标启动器上四角被硬裁。
+
+修复方式：沿用原有「AC」字形设计，从原图中提取透明前景，重新生成 background（深蓝 `#070C49` 圆角方形）、foreground（透明底 AC 字形，含阴影）、legacy 方形与圆形裁切版本，覆盖五档密度 + `anydpi-v26`（108px）。修复后实测：legacy 93% 像素完全不透明 / 3% 半透明 / 2% 透明；round 78% 不透明 / 0% 半透明 / 21% 透明（圆形外围），三份文件在每档密度下均不再相同。22 个 PNG 重新生成。
+
+> 修复过程中曾误将 legacy 图标的**浅灰**采样为背景色——那其实是旧前景层不透明地盖住了原本的深蓝背景。已改用原 `ic_launcher_background.png` 中心像素 `(7, 37, 73)` 重新生成，保持品牌色不变。
+
+#### 审计新发现（未处理，需决策）
+
+- **三端图标设计不统一**：Android 为「AC 字形 + 深蓝底 `#070C49`」，桌面端为「三叉节点 + 紫底 `#6750A4`」，鸿蒙端为「圆环原子 + 蓝底 `#185FA5`」。三者既不同图形也不同底色。品牌视觉统一涉及设计决策，未在本版本擅自改动。
+
+### Fixed — 发布核查发现的两处缺陷（v5.3.0）
+
+发版前核查 CI 与版本引用时发现，均影响已发布产物或发布流程本身。
+
+#### 桌面端设置页版本号不随发版更新（用户可见）
+
+`Strings.kt` 的中英两张字符串表**各自写死**一份版本号字面量（`"Desktop 5.2.0 — …"` / `"桌面版 5.2.0 — …"`），而 `scripts/check-version-sync.sh` 只覆盖 6 处构建文件、**未覆盖 UI 字符串**。结果是 v5.3.0 安装包里的「设置 → 关于」仍显示 5.2.0——用户与反馈截图会指向一个仓库里不存在的版本。
+
+修复：抽为 `Strings.APP_VERSION` 单一常量，两张表改为字符串模板引用；`check-version-sync.sh` 新增**第 7 个检查点**（已用「注入 5.2.0 漂移」验证脚本报 ✗ 并返回退出码 1，还原后退出码 0）。恒绿的检查等于没有检查，故新检查点必须验证过能抓到漂移。
+
+#### Windows 桌面端单元测试失败（真实平台分歧，非偶发抖动）
+
+`build-desktop.yml` 在 `965a1f9` 上的 **windows-latest「Unit tests」步骤失败**（ubuntu / macos 同一次运行均成功，含打包）。根因是两处叠加：
+
+- `CredentialVaultTest` 的历史明文迁移用例用 `JsonStore(dir).loadAgents().single()` 轮询 `agents.json` 是否已被改写为 `AKS:` 密文；而 `loadAgents()` 在**文件缺失或解析失败**时都返回 `emptyList()`。
+- `JsonStore.writeJsonLocked()` 先写 `.tmp` 再 `Files.move(REPLACE_EXISTING + ATOMIC_MOVE)`，失败时直接回退到 `file.writeText(payload)`——而直写会**先把目标文件截断为空**。
+
+Linux/macOS 上 `ATOMIC_MOVE` 生效，读取者永远看不到中间态；Windows 上一旦走回退路径，轮询就有机会读到空文件，`.single()` 随即抛 `NoSuchElementException`，把「还没写完」误判成「迁移失败」。**因此只在 Windows 上稳定复现。**
+
+修复（两侧都改，不只改测试）：
+
+- 轮询条件改为 `firstOrNull()?.apiKey?.startsWith("AKS:") != true`，把「尚未就绪」的所有中间态都当作合法状态继续等待，超时放宽到 15s（CI 机器负载下 5s 偏紧）。
+- `writeJsonLocked()` 增加中间档：`ATOMIC_MOVE` 失败时**先**尝试 `REPLACE_EXISTING` 的非原子 move（多数文件系统上仍是 rename，读取者看不到中间态），只有这条路也失败才退化为截断式直写。缩小了并发读取的暴露窗口，同时提升崩溃时的数据完整性。
+
+> 该 Windows 失败使 `build-desktop.yml` 的 `release` job 被跳过——若直接打标签，v5.3.0 将会是一个**没有任何安装包**的空 Release。故先修复再发版。
 
 ## [5.2.0] - 2026-08-27
 

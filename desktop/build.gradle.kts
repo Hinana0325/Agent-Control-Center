@@ -52,7 +52,7 @@ compose.desktop {
             targetFormats(TargetFormat.Msi, TargetFormat.Dmg, TargetFormat.Deb)
 
             packageName = "AgentControlCenter"
-            packageVersion = "5.2.0"
+            packageVersion = "5.3.0"
             description = "Agent Control Center — unified control center for local & remote AI agents"
             vendor = "Agent Control Center"
             copyright = "© 2026 Agent Control Center. All rights reserved."

@@ -7,6 +7,17 @@ package com.agentcontrolcenter.desktop.app
 object Strings {
     var locale: String = "en"
 
+    /**
+     * 设置页「关于」展示的版本号。**唯一定义点**，必须始终等于
+     * `version.properties` 的 `versionName`。
+     *
+     * 此前中英两张字符串表各自写死一份版本号字面量，发版只改构建文件时
+     * 两处会静默漂移——v5.3.0 发版核查时即发现二者仍停留在 5.2.0，
+     * 安装包已是 5.3.0 而设置页显示 5.2.0。
+     * `scripts/check-version-sync.sh` 第 7 项校验此处与 versionName 一致。
+     */
+    const val APP_VERSION = "5.3.0"
+
     private val en = mapOf(
         "app.title" to "Agent Control Center",
         "nav.chat" to "Chat",
@@ -50,7 +61,7 @@ object Strings {
         "settings.behavior" to "Behavior",
         "settings.close_to_tray" to "Close to system tray instead of quitting",
         "settings.about" to "About",
-        "settings.version" to "Desktop 5.2.0 — Compose Multiplatform",
+        "settings.version" to "Desktop $APP_VERSION — Compose Multiplatform",
         "settings.open_source" to "Part of the Agent Control Center repo (Android / iOS / HarmonyOS / Desktop)",
         "tray.show" to "Show",
         "tray.quit" to "Quit",
@@ -104,7 +115,7 @@ object Strings {
         "settings.behavior" to "行为",
         "settings.close_to_tray" to "关闭窗口时最小化到托盘",
         "settings.about" to "关于",
-        "settings.version" to "桌面版 5.2.0 — Compose Multiplatform",
+        "settings.version" to "桌面版 $APP_VERSION — Compose Multiplatform",
         "settings.open_source" to "Agent Control Center 仓库组成部分（Android / iOS / HarmonyOS / 桌面）",
         "tray.show" to "显示主窗口",
         "tray.quit" to "退出",

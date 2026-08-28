@@ -190,8 +190,21 @@ class CredentialVaultTest {
             // 内存态保持明文，供传输层建连直接使用
             assertEquals("sk-legacy-plaintext", appStore.agents.value.single().apiKey)
 
-            withTimeout(5_000) {
-                while (!JsonStore(dir).loadAgents().single().apiKey.startsWith("AKS:")) delay(20)
+            // 轮询条件必须容忍「尚未就绪」的**所有**中间态。
+            //
+            // 原实现写作 `while (!JsonStore(dir).loadAgents().single().apiKey.startsWith("AKS:"))`，
+            // 而 `loadAgents()` 在文件缺失**或解析失败**时都返回 `emptyList()`——
+            // 一旦轮询撞上写盘过程中被截断的瞬间，`.single()` 抛
+            // `NoSuchElementException`，把「还没写完」误判成「迁移失败」。
+            //
+            // 这是真实的平台分歧而非偶发抖动：Linux/macOS 上
+            // `Files.move(ATOMIC_MOVE)` 生效，读取者永远看不到中间态；
+            // Windows 上该调用退化后会先截断目标文件再写入，窗口显著变长，
+            // 因此只在 windows-latest 上稳定复现（v5.3.0 发版核查时发现）。
+            withTimeout(15_000) {
+                while (JsonStore(dir).loadAgents().firstOrNull()?.apiKey?.startsWith("AKS:") != true) {
+                    delay(20)
+                }
             }
             val persisted = JsonStore(dir).loadAgents().single().apiKey
             assertTrue(persisted.startsWith("AKS:"))
