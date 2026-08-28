@@ -18,9 +18,9 @@
 | 架构 | 六端原生，共享 `protocol/` 永久统一协议层 |
 | 协议层 | 11 JSON Schema + 5 传输协议文档 |
 | 代码规模 | Android 261 / Harmony 139 / iOS 114 / Desktop 35 文件 |
-| 测试 | Android 20 文件 · iOS 13 文件 · Desktop 3 文件（23 用例）· **Harmony 0** |
+| 测试 | Android 20 文件 · iOS 13 文件 · Desktop 4 文件（40 用例）· **Harmony 0** |
 | Instrumented / UI 测试 | **四端全 0** |
-| 已知 P0 问题 | 2 项未修复（16.1 空 pin / 16.2 鸿蒙接线）；16.3、16.4、16.9 已修复 |
+| 已知 P0 问题 | 16.2 鸿蒙接线未做；16.1 代码侧已完成、**真实 pin 待可信网络填入**；16.3、16.4、16.9 已完成 |
 
 ### 六端能力矩阵（审计口径，非 README 功能列表）
 
@@ -33,9 +33,16 @@
 | **Workflow 可视化编辑** | ❌ 只读 | ❌ 只读 | ❌ 只读 | ❌ 未移植 |
 | MCP / 插件 | ✅ | ✅ | ✅ | ❌ |
 | E2E 加密 `AH1:` | ✅ | ✅ | ✅ | ✅ |
-| 静态存储加密 `AKS:` | ✅ | ✅ | ✅ | ❌ **明文** |
-| 证书锁定 | ⚠️ 空 pin | ⚠️ 空 pin | ❌ | ❌ |
-| 单元测试 | 20 文件 | 13 文件 | **0** | 23 用例 |
+| 静态存储加密 `AKS:` | ✅ | ✅ | ✅ | ✅（v5.3.0 起，原明文） |
+| 证书锁定 | ⚠️ 接线完整·pin 为空 | ⚠️ 接线完整·pin 为空 | ❌ | ❌ |
+| 证书锁定开关 | ❌ **未实现** | ❌ **未实现** | ❌ | ❌ |
+| 单元测试 | 20 文件 | 13 文件 | **0** | 40 用例 |
+
+> **「接线完整·pin 为空」的含义**：双端均已实现完整的 pinning 链路（Android
+> `TransportFactory` 动态启用 + OkHttp `CertificatePinner`；iOS 三处 transport 注入
+> `TLSPinningDelegate`），但 pin 为占位值，运行时降级为系统默认 CA 校验——
+> **不会导致连接失败，但也不提供任何 pin 保护**。填入真实 pin 前，不应对外宣称
+> 本项目具备证书锁定能力。详见 `protocol/transport/tls-pinning.md` §4。
 
 ---
 
@@ -47,7 +54,8 @@
 
 | # | 优先级 | 任务 | 主要文件 | 验收标准 |
 |:-:|:------:|:-----|:---------|:---------|
-| 16.1 | P0 | 证书锁定填真实 pin（Android + iOS） | `android/.../transport/http/CertificatePinnerFactory.kt`<br>`ios/.../Transport/TLSPinningDelegate.swift` | 按 `protocol/transport/tls-pinning.md` §3.3 获取真实 pin 填入；移除 `TODO_GET_REAL_PIN`；pin map 非空且 CI 校验非空 |
+| 16.1 | P0 | 证书锁定填真实 pin（**代码侧已完成，pin 待填入**） | `android/.../transport/http/CertificatePinnerFactory.kt`<br>`ios/.../Transport/TLSPinningDelegate.swift`<br>`scripts/fetch-tls-pins.sh`（新增）<br>`scripts/check-tls-pins.sh`（新增） | ✅ 接线缺陷已修复 + 工具链已交付（详见下方 16.1）<br>⬜ **待维护者在可信网络执行**：`bash scripts/fetch-tls-pins.sh api.openai.com`，回填双端与 `tls-pinning.md` §4；移除 `TODO_GET_REAL_PIN`；`npm run check:pins:strict` 通过 |
+| 16.10 | P1 | **新增证书锁定用户开关**（建议作为 16.1 填 pin 的前置） | Android Settings / iOS Settings 各一处 | 用户可临时关闭锁定（降级系统 CA）。缺失时 pin 出错 = 全量用户功能不可用且无自救手段，见 `tls-pinning.md` §7 |
 | 16.2 | P0 | 鸿蒙 3 个 feature 接入主壳导航 | `harmony/entry/src/main/ets/pages/Index.ets` | `workflow` / `mcp` / `compare` 可从主壳到达；`oh-package.json5` 依赖与实际导入一致，无未使用依赖 |
 | 16.3 | P0 | **文档体系对齐（已完成）** | `DEV_PLAN.md`<br>`docs/product-strategy.md`<br>`docs/architecture.md` | 三份文档锚定 v5.2.0 六端现实；技术栈版本与构建文件逐项核对一致 |
 | 16.4 | P0 | 版本漂移防护补全（已完成） | `scripts/check-version-sync.sh`<br>`package.json`（根）<br>`desktop/build.gradle.kts` | 脚本覆盖 `desktop` + `package.json`；根 `package.json` 从漂移的 4.8.0 修正为 5.2.0；注入错误版本时脚本退出码 1 |
@@ -57,7 +65,22 @@
 | 16.8 | P2 | 新增协议一致性校验脚本 | `scripts/check-protocol-sync.sh`（新建） | 比对 `protocol/schemas/*.json` 与四端模型字段集合；漂移时 CI 失败 |
 | 16.9 | P0 | **桌面端 API Key 静态加密（已完成）** | `desktop/.../core/security/CredentialVault.kt`（新增）<br>`desktop/.../app/AppStore.kt` | ✅ 落盘前加密 `apiKey`（`AKS:` 前缀，对齐 `SECURITY.md` §4.1）；读取时解密；启动一次性迁移历史明文；17 个新用例全绿（桌面端 23 → 40） |
 
-### 已完成（16.3、16.4）
+### 已完成（16.1 代码侧、16.3、16.4、16.9）
+
+- **16.1 证书锁定（部分完成——代码侧缺陷已修复，真实 pin 待填入）**：
+
+  **修复的两个真实缺陷**（均为双端分歧，比单纯的「pin 为空」更危险）：
+
+  - **iOS 主机名大小写导致 pinning 静默降级**：`TLSPinningDelegate` 用 `challenge.protectionSpace.host`（保留 URL 原始大小写）直接查 `PUBLIC_API_PINS`。用户把 serverUrl 配成 `https://Api.OpenAI.com/v1` 时查表失败 → 静默降级为系统默认校验；而 Android 侧 OkHttp `HttpUrl` 解析时会规范化小写，同一配置会正常锁定。**iOS 静默失去保护而连接一切正常**，用户与审计者都无从察觉。已改为查表前 `lowercased()`。
+  - **Android `isPublicEndpoint` locale 陷阱**：改用 `lowercase(Locale.ROOT)`。默认 locale 下土耳其语区域会把 `I` 转成无点 `ı`（U+0131），与 iOS 的 locale-independent `lowercased()` 产生分歧。
+
+  **交付的工具链**（让「填 pin」从手工操作变为可复现的一步命令）：
+
+  - `scripts/fetch-tls-pins.sh`：一键获取 pin 并产出双端代码片段。**自带三道 MITM 拦截**（代理环境变量 / DNS 私有保留地址 / 证书链校验），任一触发即中止且零产出；`--self-test` 可离线验证 pin 算法与三级链拆分逻辑。
+  - `scripts/check-tls-pins.sh`：CI 校验双端一致性（host 集合、pin 集合、key 小写、格式、至少 2 个互不相同）。**已用 10 个正负例验证**能正确拦截漂移；占位 pin 默认仅告警，`--strict` 用作发布门禁。
+  - `npm run check` 组合版本 + pin 两项校验。
+
+  **为什么 pin 本身没有填入**：沙箱内 `api.openai.com` 被解析到 `198.18.0.29`（RFC 2544 保留段，fake-ip 特征），直连握手 EOF、代理仅放行白名单、证书透明度日志不可达。此环境下拿到的证书可能来自 MITM 代理——**把代理证书的 pin 写进源码会导致全球用户连接被拒且只能发版修复**。填入一个自己无法验证的安全常量，比留空更糟。
 
 - **16.3 文档体系对齐**：三份规划文档全部重写并锚定 v5.2.0。核对中修正了 `docs/architecture.md` 的多处技术栈错误（Kotlin 2.2.0→2.4.10、AGP 8.9→9、compileSdk 36→37、iOS 17.0→18.0、Swift 5.9→6.0），并补齐了完全缺失的 HarmonyOS 与 Desktop 两章。
 - **16.4 版本漂移防护**：`scripts/check-version-sync.sh` 扩展覆盖 `desktop/build.gradle.kts` 与根 `package.json`；根 `package.json` 版本号从漂移的 `4.8.0` 修正为 `5.2.0` 并更新为六端描述。
@@ -75,7 +98,20 @@
 
 ### 审计中新发现的问题
 
-- **桌面端 API Key 明文落盘（升级为 P0，任务 16.9）**：逐端核对静态存储加密实现时发现。三端（Android / iOS / HarmonyOS）均实现了 `AKS:` 前缀加密，唯独桌面端 `AppStore.saveAgent()` 直接明文序列化 `apiKey`。桌面端是 v5.2.0 已发布产物（msi / dmg / deb 已上 GitHub Releases），且 `SECURITY.md` §4 明确要求 `AKS:` 格式——属于规范冲突而非单纯功能缺失。
+- **桌面端 API Key 明文落盘（升级为 P0，任务 16.9）**：逐端核对静态存储加密实现时发现。三端（Android / iOS / HarmonyOS）均实现了 `AKS:` 前缀加密，唯独桌面端 `AppStore.saveAgent()` 直接明文序列化 `apiKey`。桌面端是 v5.2.0 已发布产物（msi / dmg / deb 已上 GitHub Releases），且 `SECURITY.md` §4 明确要求 `AKS:` 格式——属于规范冲突而非单纯功能缺失。**已修复。**
+
+- **证书锁定用户开关从未实现（新增任务 16.10，建议作为 16.1 填 pin 的前置）**：`protocol/transport/tls-pinning.md` §5.1 与 §7 均记载「Settings → 安全 → 证书锁定」开关，但全仓检索（`.kt` / `.swift` / `.xml` / `.ets`，2026-08）确认**双端均无相关 UI**，pinning 代码只存在于 transport 层。
+
+  这改变了 pin 出错的后果量级：
+
+  | 情形 | 有开关时 | 当前（无开关） |
+  |------|---------|---------------|
+  | pin 填错 | 用户关闭锁定即可恢复 | **全量用户功能不可用，只能等发版** |
+  | 服务端轮换密钥 | 同上 | 同上 |
+
+  建议在填入真实 pin 之前先补上该开关（任务 16.10），否则 pin 出错从「可降级的问题」变成「线上事故」。文档 §5.1 / §7 已就地更正。
+
+- **文档 §5.1「默认开启」与实际不符**：实际启用与否由 `CertificatePinnerFactory.hasRealPins()` 动态决定（占位 pin 期间自动不锁定），并非「默认开启」。已更正。
 
 ---
 

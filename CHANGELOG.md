@@ -49,6 +49,40 @@ v4.8 → v5.2 四个版本持续横向扩端（新增 HarmonyOS 与桌面三端�
 
 - **桌面端 API Key 明文落盘 → 升级为 P0 任务 16.9**：`AppStore.saveAgent()` 未经加密即把 `apiKey` 写入 `~/.agent-control-center/agents.json`。Android / iOS / HarmonyOS 三端均实现了 `AKS:` 前缀静态加密，桌面端只有 E2E `AH1:`、无 `AKS:` 实现，与 `SECURITY.md` §4 直接冲突。桌面端为 v5.2.0 已发布产物（msi / dmg / deb 已上 Releases）。
 
+### Security — 证书锁定：接线缺陷修复与工具链（v5.3.0 P0，任务 16.1 部分）
+
+任务 16.1 的目标是「把 Android/iOS 的占位 pin 替换为真实 pin」。核查后拆为两部分：**代码侧缺陷已修复，真实 pin 的填入需要维护者在可信网络下执行**（见下方原因）。
+
+#### Fixed
+
+- **iOS 主机名大小写导致 pinning 静默降级**（真实缺陷）：`TLSPinningDelegate` 直接用 `challenge.protectionSpace.host`（**保留 URL 原始大小写**）查 `PUBLIC_API_PINS`。用户把 serverUrl 配成 `https://Api.OpenAI.com/v1` 时查表失败，静默降级为系统默认校验。而 Android 侧 OkHttp `HttpUrl` 解析时会把 host 规范化为小写，同一配置会正常锁定——**双端行为分歧，iOS 静默失去保护**。这比两端都不锁定更危险：它让「已启用证书锁定」的声明落空，而用户与审计者都无从察觉（连接一切正常，只是没有保护）。修复：查表前 `lowercased()`。
+- **Android `isPublicEndpoint` locale 陷阱**：改用 `lowercase(Locale.ROOT)` 而非默认 locale。默认 locale 下土耳其语区域会把 `I` 转成无点 `ı`（U+0131），使 `I.OPENAI.COM` 被误判，与 iOS 的 locale-independent `lowercased()` 产生分歧。
+
+#### Added
+
+- **`scripts/fetch-tls-pins.sh`**（新增）：一键获取指定域名的 SPKI pin，产出可直接粘贴到双端的代码片段。**自带三道 MITM 拦截**——代理环境变量、DNS 解析到私有/保留地址（fake-ip 段）、证书链校验失败，任一触发即中止且**零产出**。另含 `--self-test` 离线自检（本地生成 leaf → intermediate → root 三级链，验证 pin 算法与 primary/backup 提取逻辑）。
+- **`scripts/check-tls-pins.sh`**（新增）：CI 校验双端 pin 一致性。检查双端 host 集合一致、同 host pin 集合一致、host key 全小写、真实 pin 格式合法（`sha256/` + 44 字符 Base64）、每 host 至少 2 个**互不相同**的 pin。占位 pin 默认仅告警（避免 CI 长期红灯掩盖真漂移），`--strict` 用于发布门禁。已用 10 个正负例验证能正确拦截各类漂移。
+- **`npm run check`**：组合版本校验与 pin 校验；另有 `check:pins` / `check:pins:strict` / `fetch:pins`。
+
+#### Changed
+
+- **`protocol/transport/tls-pinning.md`**：新增 §3.2「backup pin 应取中间 CA 公钥」、§3.3 可信网络要求与脚本用法、§3.4 主机名大小写规范、§5.3 一致性校验；§6 拆分为「叶子密钥轮换（常见）」与「CA 更换（罕见）」两种流程；§4 pin 列表改为表格并新增「获取日期 / 有效期至」元信息字段。
+
+#### 为什么真实 pin 没有填入
+
+**沙箱内无法获取可信的真实 pin。** `api.openai.com` 在此环境被解析到 `198.18.0.29`（RFC 2544 保留段，fake-ip 特征），直连 TLS 握手 EOF、代理仅放行白名单域名、证书透明度日志不可达。此环境下拿到的任何证书都可能来自 MITM 代理——**把代理证书的 pin 写进源码，会导致全球用户连接被拒且只能发版修复**。
+
+因此改为交付「可复现的获取路径」而非填入一个无法验证的值。维护者在可信网络下执行一行命令即可完成：
+
+```sh
+bash scripts/fetch-tls-pins.sh api.openai.com
+```
+
+#### 审计新发现（已登记为任务）
+
+- **证书锁定用户开关从未实现**：`protocol/transport/tls-pinning.md` §5.1 与 §7 均记载「Settings → 安全 → 证书锁定」开关，但 2026-08 全仓检索（`.kt` / `.swift` / `.xml` / `.ets`）确认**双端均无相关 UI**，pinning 代码只存在于 transport 层。这把「填错 pin」的后果从「部分用户受影响」放大为「全量用户功能不可用且无自救手段」——建议在填 pin 前先补上该开关。
+- **文档与代码不符的两处已就地修正**：上述开关，以及 §7「用户可自行关闭锁定」的应急预案描述。
+
 ## [5.2.0] - 2026-08-27
 
 ### 六端架构 — 桌面三端（Windows / macOS / Linux）

@@ -314,9 +314,19 @@ com.agentcontrolcenter.desktop/
 | E2E 传输加密 | CryptoManager，`AH1:`，PBKDF2 600000 轮 | CryptoKit，`AH1:`，相同轮数 | cryptoFramework，`AH1:`，相同轮数 | CryptoManager，`AH1:`，相同轮数 |
 | SSRF 防护 | `UrlValidator` | `URLValidator` | 内置校验 | `UrlValidator`（同 Android 实现） |
 | 证书锁定 | `CertificatePinnerFactory`（**pin 为空**） | `TLSPinningDelegate`（**pin 为空**） | — | — |
+| 证书锁定开关 | ❌ 未实现 | ❌ 未实现 | ❌ | ❌ |
 | 传输安全默认 | `allowBackup=false`，密钥不进云备份 | ATS 允许本地 Agent 连接 | — | 本地端点放行 |
 
-> **证书锁定现状（v5.2.0）**：Android `CertificatePinnerFactory.kt` 与 iOS `TLSPinningDelegate.swift` 均保留 `TODO_GET_REAL_PIN` 标记，pin 集合为空映射——等价于不锁定任何主机。框架已建、效果为零。修复任务见 `DEV_PLAN.md` 任务 16.1。
+> **证书锁定现状（v5.3.0 更新）**：Android `CertificatePinnerFactory.kt` 与 iOS `TLSPinningDelegate.swift` 均保留 `TODO_GET_REAL_PIN` 标记，pin 集合为占位值——运行时降级为系统默认 CA 校验，**不会导致连接失败，但也不提供 pin 保护**。
+>
+> v5.3.0 已完成**代码侧**修复与工具链：
+>
+> - 修复 iOS 用原始大小写 host 查 pin 表导致的**静默降级**（Android 侧 OkHttp 会规范化小写，同一 URL 双端行为分歧），Android `isPublicEndpoint` 改用 `Locale.ROOT` 消除土耳其 locale 陷阱；
+> - 新增 `scripts/fetch-tls-pins.sh`（含代理 / DNS 劫持 / 证书链三道 MITM 拦截）与 `scripts/check-tls-pins.sh`（双端一致性 CI 校验）。
+>
+> **真实 pin 仍待填入**：需在无代理的可信网络下执行 `bash scripts/fetch-tls-pins.sh api.openai.com`。当前环境（CI 沙箱）无法完成——DNS 被解析到保留地址，抓到的证书可能来自 MITM 代理，其 pin 写入源码会导致全球用户连接被拒。见 `DEV_PLAN.md` 任务 16.1。
+>
+> ⚠️ **双端均无用户开关**（2026-08 全仓核实）。协议文档曾记载「Settings → 安全 → 证书锁定」，但无任何 UI 实现。这意味着 pin 一旦填错，用户**没有自救手段**，只能等发版——已登记为任务 16.10，建议作为填 pin 的前置。
 
 > **桌面端静态存储（v5.3.0 已修复，原为 P0）**：v5.2.0 及更早 `AppStore.saveAgent()` 直接把 `AgentConfig` 交给 `JsonStore.saveAgents()`，`apiKey` **明文写入** `~/.agent-control-center/agents.json`，与 `SECURITY.md` §4 冲突。v5.3.0 新增 `core/security/CredentialVault.kt` 实现 `AKS:` 加密，并在持久化边界（`AppStore.toPersisted()` / `fromPersisted()`）自动加解密，内存态保持明文供传输层使用；启动时一次性迁移历史明文。
 >
@@ -337,9 +347,9 @@ com.agentcontrolcenter.desktop/
 | 插件系统 | ✅ | ✅ | ✅ | ❌ |
 | E2E 加密 `AH1:` | ✅ | ✅ | ✅ | ✅ |
 | 静态存储加密 `AKS:` | ✅ 硬件 | ✅ 硬件 | ✅ 硬件 | ⚠️ 密钥文件（v5.3.0 起，原明文） |
-| 证书锁定 | ⚠️ 空 pin | ⚠️ 空 pin | ❌ | ❌ |
+| 证书锁定 | ⚠️ 接线完整·pin 为空 | ⚠️ 接线完整·pin 为空 | ❌ | ❌ |
 | 跨端同步 | ⚠️ 部分 | ⚠️ MultipeerConnectivity 全 TODO | ❌ | ❌ |
-| 单元测试 | 20 文件 | 13 文件 | **0** | 3 文件 / 23 用例 |
+| 单元测试 | 20 文件 | 13 文件 | **0** | 4 文件 / 40 用例 |
 | Instrumented / UI 测试 | 1 文件（DAO） | **0** | **0** | **0** |
 
 图例：✅ 已坐实 ｜ ⚠️ 已宣发但存在空洞 ｜ ❌ 缺失或未接线

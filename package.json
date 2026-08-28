@@ -7,7 +7,11 @@
     "build:release": "cd android && ./gradlew assembleRelease",
     "build:desktop": "cd desktop && ./gradlew packageDistributionForCurrentOS",
     "test:desktop": "cd desktop && ./gradlew test",
-    "check:version": "bash scripts/check-version-sync.sh"
+    "check:version": "bash scripts/check-version-sync.sh",
+    "check:pins": "bash scripts/check-tls-pins.sh",
+    "check:pins:strict": "bash scripts/check-tls-pins.sh --strict",
+    "check": "npm run check:version && npm run check:pins",
+    "fetch:pins": "bash scripts/fetch-tls-pins.sh"
   },
   "repository": {
     "type": "git",

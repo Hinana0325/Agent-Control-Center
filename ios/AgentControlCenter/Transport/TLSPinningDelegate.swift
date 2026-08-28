@@ -58,6 +58,10 @@ final class TLSPinningDelegate: NSObject, URLSessionDelegate, @unchecked Sendabl
     /// 非真实 pin，delegate 在此期间对所有挑战降级为系统默认校验，不会启用锁定。
     /// 真实部署前必须替换（获取方法见本类文档与 tls-pinning.md 第 3.3 节）。
     /// 建议每个主机配置一个 primary pin 和一个 backup pin（用于密钥轮换）。
+    ///
+    /// ⚠️ **key 必须全小写**：查表前 host 会先 `lowercased()`（见 `urlSession(_:didReceive:)`），
+    /// 大写 key 将永远匹配不到，导致该主机的锁定静默失效。运行
+    /// `bash scripts/check-tls-pins.sh` 可校验大小写与格式。
     static let PUBLIC_API_PINS: [String: [String]] = [
         // OpenAI API
         // TODO_GET_REAL_PIN: 见 protocol/transport/tls-pinning.md 第 3.3 节获取方法
@@ -136,7 +140,18 @@ final class TLSPinningDelegate: NSObject, URLSessionDelegate, @unchecked Sendabl
             return
         }
 
-        let host = challenge.protectionSpace.host
+        // 主机名统一小写后再查表。
+        //
+        // `URLProtectionSpace.host` 保留 URL 中 host 的**原始大小写**：用户把
+        // serverUrl 配成 `https://Api.OpenAI.com/v1` 时，此处拿到的是
+        // "Api.OpenAI.com"，直接查 `PUBLIC_API_PINS`（key 为 "api.openai.com"）
+        // 会失败，并在下方第 2 步降级为系统默认校验——**pinning 静默失效**。
+        //
+        // 而 Android 侧 OkHttp 的 `HttpUrl` 在解析时会把 host 规范化为小写，同一
+        // URL 在 Android 上会正常锁定。不小写化即造成双端行为分歧：Android 提供
+        // pin 保护、iOS 静默没有。这比两端都不锁定更危险——它让「已启用证书锁定」
+        // 的声明落空，而用户与审计者都无从察觉。
+        let host = challenge.protectionSpace.host.lowercased()
 
         // 1. 全局闸门：所有 pin 均为占位 → 不锁定，走系统默认 CA 校验。
         //    对齐 Android hasRealPins=false 时 buildPinner 返回空 pinner。

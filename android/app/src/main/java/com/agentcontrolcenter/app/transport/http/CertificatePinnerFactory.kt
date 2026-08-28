@@ -2,6 +2,7 @@ package com.agentcontrolcenter.app.transport.http
 
 import okhttp3.CertificatePinner
 import java.net.URI
+import java.util.Locale
 
 /**
  * 证书锁定（Certificate Pinning）工厂。
@@ -62,6 +63,10 @@ object CertificatePinnerFactory {
      *
      * **TODO：填入实际 pin 值后取消注释。** 空 map 表示不锁定任何主机（安全默认）。
      * 建议每个主机至少配置一个 primary pin 和一个 backup pin（用于密钥轮换）。
+     *
+     * **key 必须全小写**：OkHttp 的 `HttpUrl` 会把 host 规范化为小写后再与 pinner
+     * 中登记的主机匹配，大写 key 将永远匹配不到，导致该主机的锁定静默失效。运行
+     * `bash scripts/check-tls-pins.sh` 可校验大小写与格式。
      */
     @Suppress("MemberVisibilityCanBePrivate")
     val PUBLIC_API_PINS: Map<String, List<String>> = buildMap {
@@ -144,7 +149,11 @@ object CertificatePinnerFactory {
             return false
         }
         if (host.isNullOrBlank()) return false
-        return !isLocalHost(host)
+        // 用 Locale.ROOT 而非默认 locale：默认 locale 下 'I' 在土耳其语区域会
+        // 变成无点 'ı'（U+0131），导致 "I.OPENAI.COM" 这类输入被误判。主机名
+        // 的规范化必须是 locale 无关的，才能与 iOS 端 Swift `lowercased()`
+        // （locale-independent）以及 OkHttp `HttpUrl` 的规范化结果严格一致。
+        return !isLocalHost(host.lowercase(Locale.ROOT))
     }
 
     /**
