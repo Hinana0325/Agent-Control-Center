@@ -26,6 +26,25 @@ v4.8 → v5.2 四个版本持续横向扩端（新增 HarmonyOS 与桌面三端�
 - **`scripts/check-version-sync.sh` 覆盖扩展**：新增 `desktop/build.gradle.kts`（`packageVersion`）与根 `package.json`（`version`）两个校验点。二者此前均在覆盖盲区——根 `package.json` 已静默漂移至 4.8.0。已验证注入漂移时脚本正确报错并返回退出码 1。
 - **记录版本编号缺口**：`CHANGELOG.md` 中 **v4.9.0 与 v5.0.0 从未发布**，版本号从 4.8.0 直接跳至 5.1.0。被跳过的两个版本原计划承载「Workflow 持久化 + 执行历史」（已补上）与「可视化拖拽编辑器」（至今六端全缺）。
 
+### Security — 桌面端 API Key 静态加密（v5.3.0 P0，任务 16.9）
+
+桌面端 `AppStore.saveAgent()` 原先把 `apiKey` **明文写入** `~/.agent-control-center/agents.json`，而 Android / iOS / HarmonyOS 三端均已实现 `AKS:` 前缀静态加密——桌面端只有 E2E `AH1:`、无 `AKS:` 实现，与 `SECURITY.md` §4 直接冲突。桌面端为 v5.2.0 已发布产物（msi / dmg / deb 已上 Releases）。
+
+#### Added
+
+- **`core/security/CredentialVault.kt`**：实现 `AKS:` 格式（AES-256-GCM / 随机 IV / `AKS:<Base64(IV[12] ‖ ciphertext)>`），与 `SECURITY.md` §4.1 及 Android `KeystoreManager` 逐字节同构；三态 `decryptOrRaw` 对齐 §4.4。
+- **持久化边界加解密**：`AppStore.toPersisted()` / `fromPersisted()` 在落盘与载入时自动加解密。**内存态保持明文**供传输层建连使用，与 Android「内存 domain model 明文 / 落库 entity 密文」同构。
+- **历史明文一次性迁移**：启动时检测未加密的 `apiKey` 并重写为密文，无需等用户下次编辑 Agent。
+- **主密钥文件权限收敛**：`~/.agent-control-center/master.key`（256 位随机密钥）POSIX 权限 600、目录 700；Windows 附加 `dos:hidden`。
+- **失败可见**：`apiKey` 加密失败时**拒绝保存**并上报错误，绝不降级为明文写入；主密钥文件损坏时抛 `CredentialVaultException` 而**不静默重新生成密钥**（静默重生成会让既有凭据永久不可解密）。
+- **17 个新用例**（`CredentialVaultTest`）：格式结构、随机 IV、幂等、三态语义、篡改/截断容错、主密钥持久化与设备绑定、损坏不重生成、权限收敛，以及两条 AppStore 接线测试（迁移 + 内存明文/文件密文）。桌面端测试 23 → 40。
+
+#### Changed
+
+- **`SECURITY.md`**：新增 §4.4 桌面实现与 §4.6 数据库加密的桌面条目。原 §4.4 / §4.5 顺延为 §4.5 / §4.6。
+
+> **保护强度说明（重要）**：纯 JVM 下无跨平台硬件密钥库（DPAPI / Keychain / libsecret 均需 JNI 或原生依赖），桌面端主密钥为本地文件，**强度低于**移动端 TEE/StrongBox 与 iOS Keychain：可防「数据文件被拷走后离线破解」，防不住「同一用户身份运行的恶意进程」。完整威胁模型见 `SECURITY.md` §4.4。这是能力上限而非实现疏漏，不以「已加密」三字掩盖差异。
+
 #### 审计新发现（已登记为任务）
 
 - **桌面端 API Key 明文落盘 → 升级为 P0 任务 16.9**：`AppStore.saveAgent()` 未经加密即把 `apiKey` 写入 `~/.agent-control-center/agents.json`。Android / iOS / HarmonyOS 三端均实现了 `AKS:` 前缀静态加密，桌面端只有 E2E `AH1:`、无 `AKS:` 实现，与 `SECURITY.md` §4 直接冲突。桌面端为 v5.2.0 已发布产物（msi / dmg / deb 已上 Releases）。

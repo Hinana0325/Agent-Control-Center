@@ -5,6 +5,8 @@ import com.agentcontrolcenter.desktop.data.model.Message
 import com.agentcontrolcenter.desktop.data.model.MessageRole
 import com.agentcontrolcenter.desktop.data.model.MessageStatus
 import com.agentcontrolcenter.desktop.data.model.Session
+import com.agentcontrolcenter.desktop.core.security.CredentialVault
+import com.agentcontrolcenter.desktop.core.security.CredentialVaultException
 import com.agentcontrolcenter.desktop.data.persistence.AppSettings
 import com.agentcontrolcenter.desktop.data.persistence.JsonStore
 import com.agentcontrolcenter.desktop.transport.TransportFactory
@@ -31,10 +33,19 @@ import java.util.UUID
 class AppStore(
     private val store: JsonStore,
     private val scope: CoroutineScope,
-    private val transportFactory: TransportFactory = TransportFactory()
+    private val transportFactory: TransportFactory = TransportFactory(),
+    private val vault: CredentialVault = CredentialVault()
 ) {
     val settings = MutableStateFlow(store.loadSettings())
-    val agents = MutableStateFlow(store.loadAgents())
+
+    /**
+     * Agent 配置的内存态。**apiKey 在此保持明文**——传输层建连时直接使用它，
+     * 与 Android「内存 domain model 明文 / 落库 entity 密文」同构。
+     * 加解密只发生在持久化边界（[toPersisted] / [fromPersisted]）。
+     */
+    /** 落盘态快照（密文），供启动期的完整性检查与迁移复用，避免重复读文件。 */
+    private val persistedAgents = store.loadAgents()
+    val agents = MutableStateFlow(persistedAgents.map { it.fromPersisted() })
     val sessions = MutableStateFlow(store.loadSessions())
 
     val currentSessionId = MutableStateFlow(sessions.value.firstOrNull()?.id)
@@ -53,7 +64,39 @@ class AppStore(
     private var stateJob: Job? = null
 
     init {
-        scope.launch { reloadMessages() }
+        // 已加密但解密失败的凭据：decryptOrRaw 已将其清空为 ""，
+        // 这里显式告知用户需要重新填写，避免「API Key 莫名变空」无从排查。
+        val undecryptable = persistedAgents
+            .filter { it.apiKey.isNotBlank() && vault.isEncrypted(it.apiKey) && vault.decrypt(it.apiKey) == null }
+        if (undecryptable.isNotEmpty()) {
+            errorMessage.value = Strings.t("error.credential_decrypt")
+        }
+        scope.launch {
+            reloadMessages()
+            migratePlaintextCredentials()
+        }
+    }
+
+    // MARK: - 凭据加解密（持久化边界）
+
+    /** 落盘前：把明文 apiKey 转为 `AKS:` 密文（空白不做处理）。 */
+    private fun List<AgentConfig>.toPersisted(): List<AgentConfig> = map { config ->
+        if (config.apiKey.isBlank()) config else config.copy(apiKey = vault.encrypt(config.apiKey))
+    }
+
+    /** 载入后：把 `AKS:` 密文解回明文（旧版明文按 decryptOrRaw 原样保留）。 */
+    private fun AgentConfig.fromPersisted(): AgentConfig =
+        if (apiKey.isBlank()) this else copy(apiKey = vault.decryptOrRaw(apiKey))
+
+    /**
+     * 一次性迁移：把 v5.2.0 及更早明文落盘的 apiKey 转为 `AKS:` 密文。
+     *
+     * 依据 `SECURITY.md` §4.6 —— 旧版明文首次读取时保留，写入时自动转密文。
+     * 这里在启动后主动重写一次，不必等用户下次编辑 Agent 才完成迁移。
+     */
+    private suspend fun migratePlaintextCredentials() {
+        if (persistedAgents.none { it.apiKey.isNotBlank() && !vault.isEncrypted(it.apiKey) }) return
+        runCatching { store.saveAgents(persistedAgents.toPersisted()) }
     }
 
     // MARK: - Settings
@@ -70,15 +113,28 @@ class AppStore(
     // MARK: - Agents
 
     fun saveAgent(config: AgentConfig) {
-        val next = agents.value.filter { it.id != config.id } + config
-        agents.value = next.sortedBy { it.name }
-        scope.launch { store.saveAgents(next) }
+        val updated = (agents.value.filter { it.id != config.id } + config).sortedBy { it.name }
+        // 加密失败 = 无法安全落盘。此时**拒绝保存**并上报，绝不降级为明文写入。
+        val persisted = try {
+            updated.toPersisted()
+        } catch (_: CredentialVaultException) {
+            errorMessage.value = Strings.t("error.credential_vault")
+            return
+        }
+        agents.value = updated
+        scope.launch { store.saveAgents(persisted) }
     }
 
     fun deleteAgent(id: String) {
         agents.value = agents.value.filter { it.id != id }
         if (activeAgentId.value == id) disconnect()
-        scope.launch { store.saveAgents(agents.value) }
+        val persisted = try {
+            agents.value.toPersisted()
+        } catch (_: CredentialVaultException) {
+            errorMessage.value = Strings.t("error.credential_vault")
+            return
+        }
+        scope.launch { store.saveAgents(persisted) }
     }
 
     fun connectAgent(config: AgentConfig) {

@@ -57,6 +57,8 @@ object Strings {
         "status.latency" to "Latency",
         "status.model" to "Model",
         "error.not_connected" to "Not connected — select an agent and press Connect first",
+        "error.credential_vault" to "Cannot encrypt the API key — local credential vault unavailable. The agent was not saved.",
+        "error.credential_decrypt" to "Some stored API keys could not be decrypted and were cleared. Please re-enter them.",
     )
 
     private val zh = mapOf(
@@ -109,6 +111,8 @@ object Strings {
         "status.latency" to "延迟",
         "status.model" to "模型",
         "error.not_connected" to "未连接——请先在 Agents 页选择并连接一个 Agent",
+        "error.credential_vault" to "无法加密 API Key——本地凭据保险库不可用，该 Agent 未保存。",
+        "error.credential_decrypt" to "部分已存储的 API Key 无法解密，已清空，请重新填写。",
     )
 
     fun t(key: String): String =

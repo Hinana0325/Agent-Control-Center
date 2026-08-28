@@ -81,7 +81,34 @@ AKS:<Base64(IV[12] ‖ ciphertext)>
 - **算法**：CryptoKit `AES.GCM`（`AES.GCM.seal` / `AES.GCM.open`）
 - **密钥生成**：`SymmetricKey(size: .bits256)`，存储于 Keychain
 
-### 4.4 decryptOrRaw 向后兼容
+### 4.4 桌面实现（CredentialVault）
+
+> 新增于 v5.3.0。桌面端（Windows/macOS/Linux）在纯 JVM 下**没有**跨平台的硬件
+> 密钥库等价物（DPAPI / Keychain / libsecret 均需 JNI 或原生依赖），因此主密钥的
+> 保护方式与移动端不同，保护强度**低于** §4.2 / §4.3。
+
+- **密钥库**：无（无硬件支持）
+- **主密钥**：256 位随机密钥，存储于 `~/.agent-control-center/master.key`
+- **文件保护**：POSIX 平台权限 `600`（目录 `700`）；Windows 无 POSIX 权限模型，
+  仅附加 `dos:hidden`，**无法做到仅属主可读**
+- **算法**：`Cipher.getInstance("AES/GCM/NoPadding")`，随机 IV，密文格式与移动端同构
+- **密钥可导出**：是（这是与移动端的核心差异）
+
+**威胁模型（须如实理解）**：
+
+| 攻击场景 | 移动端（TEE / Keychain） | 桌面端（密钥文件） |
+|:---|:---|:---|
+| 数据文件被拷走 / 同步到云端后离线破解 | ✅ 防住 | ✅ 防住 |
+| 同一用户身份运行的恶意进程读取 | ✅ 防住 | ❌ **防不住** |
+| 磁盘整体被盗且未做全盘加密 | ✅ 防住 | ❌ 防不住 |
+
+桌面端方案属「防顺手牵羊、防文件外泄」，**不等价于**移动端硬件绑定。在纯 JVM
+跨平台前提下这是能力上限；如需更强保护，应启用全盘加密（BitLocker / FileVault / LUKS）。
+
+**故障行为**：主密钥文件存在但内容损坏时，`CredentialVault` 抛 `CredentialVaultException`
+而**不静默重新生成密钥**——静默重生成会让既有凭据永久不可解密。宁可失败可见，不可静默丢数据。
+
+### 4.5 decryptOrRaw 向后兼容
 
 统一的解密入口 `decryptOrRaw(value)` 处理三种情形：
 
@@ -93,10 +120,14 @@ AKS:<Base64(IV[12] ‖ ciphertext)>
 
 > 设计要点：解密失败时返回空串而非抛异常或回退原文，避免将密文误当明文使用导致鉴权失败难以定位。
 
-### 4.5 数据库加密
+### 4.6 数据库加密
 
 - **Android**：Room 数据库存储会话与消息，敏感字段（apiKey）在写入前经 `AKS:` 加密
-- **iOS**：SwiftData 存储 5 个实体，敏感字段同样经 `AKS:` 加密后持久化
+- **iOS**：SwiftData 存储实体，敏感字段同样经 `AKS:` 加密后持久化
+- **HarmonyOS**：relationalStore 存储，敏感字段经 `AKS:` 加密后持久化
+- **桌面端**（v5.3.0 起）：`JsonStore` 落盘 `agents.json` 前经 `CredentialVault` 加密
+  `apiKey`；内存态保持明文供传输层使用，加解密只发生在持久化边界。
+  v5.2.0 及更早版本为**明文落盘**，启动时由一次性迁移自动转为密文。
 - **迁移**：旧版明文数据在首次读取时通过 `decryptOrRaw` 自动识别并保留，后续写入时自动转为加密格式
 
 ---

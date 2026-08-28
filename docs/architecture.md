@@ -261,7 +261,7 @@ harmony/
 | 异步 | Coroutines + Flow |
 | 持久化 | JSON 文件存储（`~/.agent-control-center/`） |
 | 网络 | Ktor 3.2.3 + OkHttp 引擎（与 Android 同栈） |
-| 安全 | javax.crypto（AES-256-GCM，`AH1:`）+ `UrlValidator`（SSRF） |
+| 安全 | javax.crypto：`CryptoManager`（E2E `AH1:`）+ `CredentialVault`（静态 `AKS:`，主密钥文件）+ `UrlValidator`（SSRF） |
 | 打包 | jpackage（Msi / Dmg / Deb） |
 | 本地化 | en / zh（ja、ko 列入路线图） |
 
@@ -273,6 +273,7 @@ com.agentcontrolcenter.desktop/
 ├── agent/model/         AgentConfig / AgentType(8) / AgentProtocol / Agent / ConnectionState
 ├── core/error/          AppErrorCode(37)
 ├── core/security/       UrlValidator(SSRF 防护) / CryptoManager(E2E AH1:)
+│                        / CredentialVault(静态 AKS:，主密钥文件)
 ├── data/model/          Message / Session
 ├── data/persistence/    JsonStore（原子写 + 损坏回退空态）/ AppSettings
 ├── transport/           TransportFactory + protocol + http(OpenAIHttpTransport)
@@ -286,10 +287,13 @@ com.agentcontrolcenter.desktop/
 ```
 ~/.agent-control-center/
 ├── settings.json              — AppSettings
-├── agents.json                — List<AgentConfig>
+├── agents.json                — List<AgentConfig>（apiKey 为 AKS: 密文）
 ├── sessions.json              — List<Session>
+├── master.key                 — 256 位主密钥（AKS: 用，POSIX 600）
 └── messages/<sessionId>.json  — List<Message>
 ```
+
+> `master.key` 丢失 = 已存储的 `AKS:` 凭据永久不可解密。备份数据目录时须一并包含它；反之，只拷走 `agents.json` 而无 `master.key` 则拿到的是无法解密的密文。
 
 写入经 `Mutex` 串行化 + NIO `Files.move(REPLACE_EXISTING + ATOMIC_MOVE)` 原子替换（`File.renameTo` 在 Windows 上目标存在时必然失败，禁止使用）。
 
@@ -306,7 +310,7 @@ com.agentcontrolcenter.desktop/
 
 | 维度 | Android | iOS | HarmonyOS | Desktop |
 |------|---------|-----|-----------|---------|
-| 静态存储加密 | AndroidKeyStore，`AKS:` 前缀 | Keychain，`AKS:` 前缀 | HUKS，`AKS:` 前缀 | ❌ **无**（API Key 明文落盘） |
+| 静态存储加密 | AndroidKeyStore，`AKS:` 前缀 | Keychain，`AKS:` 前缀 | HUKS，`AKS:` 前缀 | ⚠️ `AKS:` 前缀，主密钥为本地文件（v5.3.0 起） |
 | E2E 传输加密 | CryptoManager，`AH1:`，PBKDF2 600000 轮 | CryptoKit，`AH1:`，相同轮数 | cryptoFramework，`AH1:`，相同轮数 | CryptoManager，`AH1:`，相同轮数 |
 | SSRF 防护 | `UrlValidator` | `URLValidator` | 内置校验 | `UrlValidator`（同 Android 实现） |
 | 证书锁定 | `CertificatePinnerFactory`（**pin 为空**） | `TLSPinningDelegate`（**pin 为空**） | — | — |
@@ -314,7 +318,9 @@ com.agentcontrolcenter.desktop/
 
 > **证书锁定现状（v5.2.0）**：Android `CertificatePinnerFactory.kt` 与 iOS `TLSPinningDelegate.swift` 均保留 `TODO_GET_REAL_PIN` 标记，pin 集合为空映射——等价于不锁定任何主机。框架已建、效果为零。修复任务见 `DEV_PLAN.md` 任务 16.1。
 
-> **桌面端静态存储缺口（v5.2.0，P0）**：`AppStore.saveAgent()` 直接把 `AgentConfig` 交给 `JsonStore.saveAgents()`，其中 `apiKey` **未加密即写入** `~/.agent-control-center/agents.json`。对照之下 Android 在 `toEntity()` 内调用 `KeystoreManager.encrypt(apiKey)`，产出 `AKS:` 前缀密文。桌面端只有 `CryptoManager`（E2E `AH1:`），**没有 `AKS:` 静态加密实现**——这与 `SECURITY.md` §4「API Key 等敏感凭据在本地持久化时使用统一的 `AKS:` 前缀格式」直接冲突。修复任务见 `DEV_PLAN.md` 任务 16.9。
+> **桌面端静态存储（v5.3.0 已修复，原为 P0）**：v5.2.0 及更早 `AppStore.saveAgent()` 直接把 `AgentConfig` 交给 `JsonStore.saveAgents()`，`apiKey` **明文写入** `~/.agent-control-center/agents.json`，与 `SECURITY.md` §4 冲突。v5.3.0 新增 `core/security/CredentialVault.kt` 实现 `AKS:` 加密，并在持久化边界（`AppStore.toPersisted()` / `fromPersisted()`）自动加解密，内存态保持明文供传输层使用；启动时一次性迁移历史明文。
+>
+> **强度差异（重要）**：桌面端在纯 JVM 下无跨平台硬件密钥库，主密钥为 `~/.agent-control-center/master.key` 中的 256 位随机密钥（POSIX 权限 600）。可防「数据文件被拷走后离线破解」，**防不住**「同用户身份的恶意进程」——弱于 Android TEE/StrongBox 与 iOS Keychain。完整威胁模型见 `SECURITY.md` §4.4。
 
 ## 9. 实现完整度边界（v5.2.0 审计）
 
@@ -330,7 +336,7 @@ com.agentcontrolcenter.desktop/
 | MCP（JSON-RPC 2.0） | ✅ | ✅ | ✅ | ❌ |
 | 插件系统 | ✅ | ✅ | ✅ | ❌ |
 | E2E 加密 `AH1:` | ✅ | ✅ | ✅ | ✅ |
-| 静态存储加密 `AKS:` | ✅ | ✅ | ✅ | ❌ **明文** |
+| 静态存储加密 `AKS:` | ✅ 硬件 | ✅ 硬件 | ✅ 硬件 | ⚠️ 密钥文件（v5.3.0 起，原明文） |
 | 证书锁定 | ⚠️ 空 pin | ⚠️ 空 pin | ❌ | ❌ |
 | 跨端同步 | ⚠️ 部分 | ⚠️ MultipeerConnectivity 全 TODO | ❌ | ❌ |
 | 单元测试 | 20 文件 | 13 文件 | **0** | 3 文件 / 23 用例 |

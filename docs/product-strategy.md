@@ -24,7 +24,9 @@
 
 1. **端从 2 个变成 6 个，但被定为 P0「分水岭特性」的 Workflow 可视化编辑器至今六端全缺。** Android 的 `WorkflowCanvas` 只做只读渲染（按 `positionX/Y` 摆位 + 贝塞尔边 + 执行态高亮），不能拖拽、不能连线、不能编辑。
 2. **已宣发的能力出现空洞，且有一处与自有安全规范冲突。** Android/iOS 的 TLS pin 集合为空（框架在、效果为零）；iOS 跨端同步 `DeviceSyncManager` 的 MultipeerConnectivity 有 6 处 TODO（广播/会话/收发全是空壳）；鸿蒙端 3 个 feature HSP 已开发但未接入主壳导航；根 `package.json` 版本号漂移在 4.8.0 未被任何校验覆盖。
-3. **桌面端 API Key 明文落盘（v5.2.0 审计新发现）。** `AppStore.saveAgent()` 未经加密即把 `apiKey` 写入 `~/.agent-control-center/agents.json`，而 Android 在 `toEntity()` 内调用 `KeystoreManager.encrypt(apiKey)` 产出 `AKS:` 密文。桌面端只实现了 E2E `AH1:`，**没有 `AKS:` 静态加密**——这与 `SECURITY.md` §4「API Key 等敏感凭据在本地持久化时使用统一的 `AKS:` 前缀格式」直接冲突。安全性是本产品的第 3 号差异化壁垒，桌面端作为已发布版本不应在其上开缺口。
+3. **桌面端 API Key 明文落盘（v5.2.0 审计新发现，v5.3.0 已修复）。** `AppStore.saveAgent()` 未经加密即把 `apiKey` 写入 `~/.agent-control-center/agents.json`，而 Android 在 `toEntity()` 内调用 `KeystoreManager.encrypt(apiKey)` 产出 `AKS:` 密文。桌面端只实现了 E2E `AH1:`，**没有 `AKS:` 静态加密**——这与 `SECURITY.md` §4 直接冲突。安全性是本产品的第 3 号差异化壁垒，桌面端作为已发布版本不应在其上开缺口。
+
+   **已修复**：新增 `CredentialVault`，持久化边界加解密 + 历史明文一次性迁移，17 个新用例。但须注意——桌面端主密钥为本地文件而非硬件 Keystore，强度**低于**移动端，威胁模型见 `SECURITY.md` §4.4。
 4. **验证能力没跟上扩端速度。** 鸿蒙端 0 测试，四端 instrumented/UI 测试全为 0，`build-harmony.yml` 依赖 self-hosted runner（实际大概率从未跑过）。
 
 **结论：六端格局已经铺完，v5.3.0 起停止扩端，转向「坐实已宣发能力 + 打通分水岭特性」。** 继续扩端的边际收益已低于把现有六端做深做实。
@@ -146,7 +148,7 @@
 | **P0** | 证书锁定填真实 pin（Android + iOS） | 空 pin 让安全宣发形同虚设，是"说了没做"最典型的一处 |
 | **P0** | 鸿蒙 workflow/mcp/compare 接入主壳导航 | 已开发却不可达，比"未开发"更糟 |
 | **P0** | 文档体系对齐（本次交付） | 三份文档停更在 v4.8.0，与 v5.2.0 六端现实脱节；期间还整体跳过了 v4.9.0 与 v5.0.0 |
-| **P0** | 桌面端 API Key 静态加密（`AKS:`） | 明文落盘与自有 `SECURITY.md` §4 冲突；安全性是差异化壁垒，已发布版本不应开此缺口 |
+| ~~P0~~ ✅ | 桌面端 API Key 静态加密（`AKS:`） | 已完成（v5.3.0）：`CredentialVault` + 持久化边界加解密 + 历史明文迁移，17 个新用例 |
 | **P0** | 版本与协议漂移防护 | 根 `package.json` 已漂移至 4.8.0 且无校验覆盖；`desktop/build.gradle.kts` 同样在覆盖盲区 |
 | **P1** | 桌面端 Workflow 协议层 + 引擎移植 | 为 v5.4 可视化编辑器铺路，先无 UI |
 | **P1** | 鸿蒙端测试从 0 起步 | 唯一零测试端，CI 又依赖 self-hosted runner，风险最高 |

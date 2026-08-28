@@ -8,9 +8,10 @@
 - **Agent 管理**：8 种 AgentType 配置（名称/类型/URL/ApiKey/模型/系统提示词/温度/MaxTokens）、一键连接、连接状态栏（延迟/服务器）
 - **传输层**：`WebSocketTransport`（鉴权帧 + 指数退避重连 + 30s 心跳）+ `OpenAIHttpTransport`（SSE 流式 + 非 SSE 回退 + 滑动窗口历史 + 5xx 重试）；覆盖 Hermes/OpenCode/OpenClaw/OpenAI 兼容/Ollama/LM Studio/MiMo/OpenWebUI
 - **E2E 加密**：`AH1:` 格式（AES-256-GCM + PBKDF2 600000 轮），与 Android/iOS 端互操作；设置页热更新口令
+- **静态凭据加密**：`AKS:` 格式（AES-256-GCM + 随机 IV），API Key 落盘前加密、载入时解密；内存态保持明文供传输层建连使用。v5.2.0 及更早的明文历史数据在启动时自动迁移
 - **SSRF 防护**：`UrlValidator`（云 metadata/保留地址段/危险 scheme 拦截，本地端点放行）
 - **系统托盘**：close-to-tray、Show/Quit 菜单
-- **持久化**：`~/.agent-control-center/` JSON 文件存储（agents/sessions/messages/settings），临时文件 + 原子重命名写入
+- **持久化**：`~/.agent-control-center/` JSON 文件存储（agents/sessions/messages/settings + master.key），临时文件 + 原子重命名写入
 - **双语**：英语 / 简体中文
 
 ## 构建与运行
@@ -19,7 +20,7 @@
 # 开发运行（当前平台）
 ./gradlew run
 
-# 单元测试（23 个 JVM 测试：协议契约/安全/持久化）
+# 单元测试（40 个 JVM 测试：协议契约/安全/持久化/凭据保险库）
 ./gradlew test
 
 # 安装包：Windows→msi / macOS→dmg / Linux→deb
@@ -35,6 +36,7 @@ com.agentcontrolcenter.desktop/
 ├── agent/model/          # 协议层：AgentConfig/AgentType/AgentProtocol/Agent/ConnectionState
 ├── core/error/           # AppErrorCode（37 错误码，与三端对齐）
 ├── core/security/        # UrlValidator（SSRF 防护）+ CryptoManager（E2E AH1:）
+│                         # + CredentialVault（静态 AKS:，主密钥 master.key）
 ├── data/model/           # Message/Session
 ├── data/persistence/     # JsonStore（JSON 文件存储 + AppSettings）
 ├── transport/

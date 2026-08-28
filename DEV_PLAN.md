@@ -20,7 +20,7 @@
 | 代码规模 | Android 261 / Harmony 139 / iOS 114 / Desktop 35 文件 |
 | 测试 | Android 20 文件 · iOS 13 文件 · Desktop 3 文件（23 用例）· **Harmony 0** |
 | Instrumented / UI 测试 | **四端全 0** |
-| 已知 P0 问题 | 3 项未修复（16.1 空 pin / 16.2 鸿蒙接线 / 16.9 桌面端 API Key 明文）；16.3、16.4 已修复 |
+| 已知 P0 问题 | 2 项未修复（16.1 空 pin / 16.2 鸿蒙接线）；16.3、16.4、16.9 已修复 |
 
 ### 六端能力矩阵（审计口径，非 README 功能列表）
 
@@ -55,12 +55,17 @@
 | 16.6 | P1 | 鸿蒙端测试从 0 起步 | `harmony/common/src/test/`（新建） | ≥ 5 用例，优先 `WorkflowEngine.ets` 与 `OpenAIHttpTransport.ets`；CI 可跑 |
 | 16.7 | P2 | 清理 iOS WorkflowEngine 陈旧注释 | `ios/.../Runtime/WorkflowEngine.swift:46,375` | 注释与实际行为一致（C9 修复后已通过 `DataController` 查真实配置），避免后续审计误判 |
 | 16.8 | P2 | 新增协议一致性校验脚本 | `scripts/check-protocol-sync.sh`（新建） | 比对 `protocol/schemas/*.json` 与四端模型字段集合；漂移时 CI 失败 |
-| 16.9 | P0 | **桌面端 API Key 静态加密（审计新发现）** | `desktop/.../core/security/`（新增 `AKS:` 实现）<br>`desktop/.../app/AppStore.kt` | `saveAgent()` 落盘前加密 `apiKey`（`AKS:` 前缀，对齐 Android `KeystoreManager`）；读取时解密；迁移既有明文文件；与 `SECURITY.md` §4 一致 |
+| 16.9 | P0 | **桌面端 API Key 静态加密（已完成）** | `desktop/.../core/security/CredentialVault.kt`（新增）<br>`desktop/.../app/AppStore.kt` | ✅ 落盘前加密 `apiKey`（`AKS:` 前缀，对齐 `SECURITY.md` §4.1）；读取时解密；启动一次性迁移历史明文；17 个新用例全绿（桌面端 23 → 40） |
 
 ### 已完成（16.3、16.4）
 
 - **16.3 文档体系对齐**：三份规划文档全部重写并锚定 v5.2.0。核对中修正了 `docs/architecture.md` 的多处技术栈错误（Kotlin 2.2.0→2.4.10、AGP 8.9→9、compileSdk 36→37、iOS 17.0→18.0、Swift 5.9→6.0），并补齐了完全缺失的 HarmonyOS 与 Desktop 两章。
 - **16.4 版本漂移防护**：`scripts/check-version-sync.sh` 扩展覆盖 `desktop/build.gradle.kts` 与根 `package.json`；根 `package.json` 版本号从漂移的 `4.8.0` 修正为 `5.2.0` 并更新为六端描述。
+- **16.9 桌面端 API Key 静态加密**：新增 `core/security/CredentialVault.kt`，实现 `AKS:` 格式（AES-256-GCM，随机 IV，与 Android/iOS 逐字节同构）。`AppStore` 在持久化边界加解密——**内存态保持明文**供传输层建连使用，与 Android「内存 domain model 明文 / 落库 entity 密文」同构。启动时一次性迁移历史明文。桌面端测试 23 → 40（新增 17 个）。
+
+  主密钥为 `~/.agent-control-center/master.key`（256 位随机，POSIX 600）。**纯 JVM 下无跨平台硬件密钥库**（DPAPI/Keychain/libsecret 均需 JNI），故强度低于移动端 TEE/Keychain：可防「文件被拷走后离线破解」，防不住「同用户身份的恶意进程」。已在 `SECURITY.md` §4.4 记录完整威胁模型，不以「已加密」四字掩盖强度差异。
+
+  设计取舍：密钥文件损坏时抛 `CredentialVaultException` 而**不静默重新生成密钥**——静默重生成会让既有凭据永久不可解密。宁可失败可见，不可静默丢数据（用例 `密钥文件损坏时抛异常且不静默重生成` 锁定此行为）。
 
 ### 审计中修正的误判（记录以防复发）
 
