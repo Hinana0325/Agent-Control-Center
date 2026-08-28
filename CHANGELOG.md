@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### 文档 — v5.3.0「可信化」规划重新锚定（Sprint 16.3 / 16.4）
+
+v4.8 → v5.2 四个版本持续横向扩端（新增 HarmonyOS 与桌面三端），但规划文档全部停更在 v4.8.0，与实际六端格局脱节。本次将规划体系重新锚定到 v5.2.0 现实。
+
+#### Changed
+
+- **`DEV_PLAN.md`**：整体重写。现状表改为六端审计口径，新增 Sprint 16（v5.3.0 可信化）8 项任务级分解（含文件与验收标准）、Sprint 17/18 规划、依赖关系图、风险表，并记录沙箱内可验证性边界。
+- **`docs/product-strategy.md`**：重新锚定。新增「为什么需要重新锚定」章节，明确指出 v5.x 实际走向（继续扩端）与 v4.8 策略（转向编排深度）**相背离**；四条增长主线重新排序（主线 A 下调、主线 B 升为第一、新增主线 D「可信度与验证能力」）；路线图重排为 v5.3.0 可信化 → v5.4.0 可视化编排分水岭 → v5.5.0 端侧推理 + MCP 市场。
+- **`docs/architecture.md`**：从 v4.8.0 双端更新为 v5.2.0 六端。补齐完全缺失的 HarmonyOS（§5）与 Desktop（§6）两章；协议层 10 schema / 4 transport 更正为 11 / 5；跨平台映射表扩为四列。
+- **技术栈版本逐项核对修正**（原文档与构建文件不符）：Kotlin 2.2.0 → **2.4.10**；AGP 8.9 → **AGP 9**；compileSdk 36 → **37**；iOS deploymentTarget 17.0 → **18.0**；Swift 5.9+ → **6.0**。
+- **`package.json`**：版本号从漂移的 `4.8.0` 修正为 `5.2.0`，描述更新为六端，新增 `build:desktop` / `test:desktop` / `check:version` 脚本。
+
+#### Added
+
+- **新增 §9「实现完整度边界」**（`docs/architecture.md`）：以审计口径区分「已坐实 / 已宣发但存在空洞 / 缺失或未接线」，避免把 README 功能列表误读为完成度。
+- **新增 §9.1「易被误读为缺陷的项」**：记录 iOS `WorkflowEngine` 注释称「AgentConfigDao 尚未实现」但实际已由 C9 修复接线 `DataController` 的陷阱，警示六端架构下注释不可作为审计依据。
+- **`scripts/check-version-sync.sh` 覆盖扩展**：新增 `desktop/build.gradle.kts`（`packageVersion`）与根 `package.json`（`version`）两个校验点。二者此前均在覆盖盲区——根 `package.json` 已静默漂移至 4.8.0。已验证注入漂移时脚本正确报错并返回退出码 1。
+- **记录版本编号缺口**：`CHANGELOG.md` 中 **v4.9.0 与 v5.0.0 从未发布**，版本号从 4.8.0 直接跳至 5.1.0。被跳过的两个版本原计划承载「Workflow 持久化 + 执行历史」（已补上）与「可视化拖拽编辑器」（至今六端全缺）。
+
+#### 审计新发现（已登记为任务）
+
+- **桌面端 API Key 明文落盘 → 升级为 P0 任务 16.9**：`AppStore.saveAgent()` 未经加密即把 `apiKey` 写入 `~/.agent-control-center/agents.json`。Android / iOS / HarmonyOS 三端均实现了 `AKS:` 前缀静态加密，桌面端只有 E2E `AH1:`、无 `AKS:` 实现，与 `SECURITY.md` §4 直接冲突。桌面端为 v5.2.0 已发布产物（msi / dmg / deb 已上 Releases）。
+
 ## [5.2.0] - 2026-08-27
 
 ### 六端架构 — 桌面三端（Windows / macOS / Linux）

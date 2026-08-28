@@ -1,10 +1,13 @@
 {
   "name": "agent-control-center",
-  "version": "4.8.0",
-  "description": "Multi-Agent mobile controller for AI agents (Hermes / OpenAI-compatible / Local Models) — Android (Kotlin + Jetpack Compose)",
+  "version": "5.2.0",
+  "description": "Multi-Agent control center for AI agents (Hermes / OpenAI-compatible / Local Models / ComfyUI) — Android (Kotlin + Jetpack Compose) · iOS (Swift + SwiftUI) · HarmonyOS (ArkTS + ArkUI) · Desktop Win/macOS/Linux (Kotlin + Compose Multiplatform)",
   "scripts": {
     "build:apk": "cd android && ./gradlew assembleDebug",
-    "build:release": "cd android && ./gradlew assembleRelease"
+    "build:release": "cd android && ./gradlew assembleRelease",
+    "build:desktop": "cd desktop && ./gradlew packageDistributionForCurrentOS",
+    "test:desktop": "cd desktop && ./gradlew test",
+    "check:version": "bash scripts/check-version-sync.sh"
   },
   "repository": {
     "type": "git",
@@ -13,10 +16,14 @@
   "keywords": [
     "ai-agent",
     "android",
+    "ios",
+    "harmonyos",
+    "desktop",
     "kotlin",
-    "compose",
-    "multi-agent",
-    "mobile"
+    "swift",
+    "arkts",
+    "compose-multiplatform",
+    "multi-agent"
   ],
   "author": "Hinana0325",
   "license": "MIT"

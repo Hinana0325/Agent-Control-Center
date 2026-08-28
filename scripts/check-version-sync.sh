@@ -8,6 +8,8 @@
 #   - ios/project.yml           (2 targets x 2 fields:
 #                                 MARKETING_VERSION / CURRENT_PROJECT_VERSION)
 #   - android/app/build.gradle  (fallback values in the ?: '...' expressions)
+#   - desktop/build.gradle.kts  (packageVersion = "...")
+#   - package.json              ("version": "...")
 #
 # Exits 0 when every reference matches the authoritative source, 1 on any drift.
 #
@@ -21,6 +23,8 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 VERSION_PROPS="$REPO_ROOT/version.properties"
 IOS_YML="$REPO_ROOT/ios/project.yml"
 ANDROID_GRADLE="$REPO_ROOT/android/app/build.gradle"
+DESKTOP_GRADLE="$REPO_ROOT/desktop/build.gradle.kts"
+ROOT_PACKAGE_JSON="$REPO_ROOT/package.json"
 
 failures=0
 
@@ -47,7 +51,7 @@ check_field() {
 # ---------------------------------------------------------------------------
 # 0. Sanity: ensure the three files exist.
 # ---------------------------------------------------------------------------
-for f in "$VERSION_PROPS" "$IOS_YML" "$ANDROID_GRADLE"; do
+for f in "$VERSION_PROPS" "$IOS_YML" "$ANDROID_GRADLE" "$DESKTOP_GRADLE" "$ROOT_PACKAGE_JSON"; do
     if [[ ! -f "$f" ]]; then
         echo "✗ File not found: $f"
         exit 1
@@ -131,7 +135,37 @@ if [[ $android_ok -eq 1 ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# 4. Summary
+# 4. desktop/build.gradle.kts — packageVersion = "5.2.0"
+#    Desktop was added in v5.2.0 and was never covered by this script; its
+#    packageVersion is hardcoded (no fallback expression to inspect).
+# ---------------------------------------------------------------------------
+desktop_match=$(grep -nE '^[[:space:]]*packageVersion[[:space:]]*=' "$DESKTOP_GRADLE" | head -1 || true)
+desktop_lineno=$(printf '%s' "$desktop_match" | sed -E 's/^([0-9]+):.*/\1/' || true)
+desktop_value=$(printf '%s' "$desktop_match" | sed -E 's/.*=[[:space:]]*"([^"]*)".*/\1/' || true)
+
+desktop_ok=1
+check_field "desktop/build.gradle.kts" "$desktop_lineno" "packageVersion" "$desktop_value" "$versionName" || desktop_ok=0
+if [[ $desktop_ok -eq 1 ]]; then
+    echo "✓ desktop/build.gradle.kts: packageVersion=$desktop_value"
+fi
+
+# ---------------------------------------------------------------------------
+# 5. package.json (repo root) — "version": "5.2.0"
+#    Root manifest drifted to 4.8.0 while the app shipped 5.2.0; it is now
+#    covered so the drift cannot silently reappear.
+# ---------------------------------------------------------------------------
+pkg_match=$(grep -nE '^[[:space:]]*"version"[[:space:]]*:' "$ROOT_PACKAGE_JSON" | head -1 || true)
+pkg_lineno=$(printf '%s' "$pkg_match" | sed -E 's/^([0-9]+):.*/\1/' || true)
+pkg_value=$(printf '%s' "$pkg_match" | sed -E 's/.*:[[:space:]]*"([^"]*)".*/\1/' || true)
+
+pkg_ok=1
+check_field "package.json" "$pkg_lineno" "version" "$pkg_value" "$versionName" || pkg_ok=0
+if [[ $pkg_ok -eq 1 ]]; then
+    echo "✓ package.json: version=$pkg_value"
+fi
+
+# ---------------------------------------------------------------------------
+# 6. Summary
 # ---------------------------------------------------------------------------
 if [[ $failures -eq 0 ]]; then
     echo "All version references are in sync."

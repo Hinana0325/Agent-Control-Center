@@ -1,23 +1,53 @@
 # Agent Control Center 产品策略
 
-> 最后更新：v4.8.0（2026-07-23）
-> 状态：策略锚定文档，驱动后续版本规划
+> 最后更新：v5.2.0（2026-08-29）
+> 状态：策略锚定文档，驱动 v5.3.0 及后续版本规划
+> 上一版锚定在 v4.8.0，本版为**重新锚定**（re-anchor），非增量修订
+
+## 〇、为什么需要重新锚定
+
+上一版策略（v4.8.0）给出的判断是：
+
+> 「下一步重心应从『扩 Agent 类型』转向『编排深度 + 用户研究 + 工程化收敛』，用 Workflow 可视化编辑器和端侧推理建立真正的产品差异化。」
+
+**实际发生的与之相反。** v4.8.0 之后只发了两个版本，全部是**横向扩端**：
+
+| 版本 | 动作 | 性质 |
+|------|------|------|
+| v5.1.0 | 新增 HarmonyOS 第三原生端 + Android 厂商适配 | **扩端** |
+| v5.2.0 | 新增桌面三端（Win/macOS/Linux） | **扩端** |
+| ⚠️ **从未发布** | **v4.9.0（编排深化）与 v5.0.0（可视化编辑器 + 端侧推理）被整体跳过** —— 版本号从 4.8.0 直接跳到 5.1.0 | **跳过** |
+
+**这一点尤其值得警惕**：被跳过的 v4.9.0 与 v5.0.0，恰好是原策略里承载「Workflow 持久化 + 执行历史」和「可视化拖拽编辑器」的两个版本。版本号宣称的段位已经到了 5.2，但这两个版本对应的能力并未随之交付——`Workflow 运行历史`属于 v4.9.0 的范畴（现已实现），而 `可视化编辑器`属于 v5.0.0（至今六端全缺）。**版本号与实际能力的错位正在累积。**
+
+结果是：
+
+1. **端从 2 个变成 6 个，但被定为 P0「分水岭特性」的 Workflow 可视化编辑器至今六端全缺。** Android 的 `WorkflowCanvas` 只做只读渲染（按 `positionX/Y` 摆位 + 贝塞尔边 + 执行态高亮），不能拖拽、不能连线、不能编辑。
+2. **已宣发的能力出现空洞，且有一处与自有安全规范冲突。** Android/iOS 的 TLS pin 集合为空（框架在、效果为零）；iOS 跨端同步 `DeviceSyncManager` 的 MultipeerConnectivity 有 6 处 TODO（广播/会话/收发全是空壳）；鸿蒙端 3 个 feature HSP 已开发但未接入主壳导航；根 `package.json` 版本号漂移在 4.8.0 未被任何校验覆盖。
+3. **桌面端 API Key 明文落盘（v5.2.0 审计新发现）。** `AppStore.saveAgent()` 未经加密即把 `apiKey` 写入 `~/.agent-control-center/agents.json`，而 Android 在 `toEntity()` 内调用 `KeystoreManager.encrypt(apiKey)` 产出 `AKS:` 密文。桌面端只实现了 E2E `AH1:`，**没有 `AKS:` 静态加密**——这与 `SECURITY.md` §4「API Key 等敏感凭据在本地持久化时使用统一的 `AKS:` 前缀格式」直接冲突。安全性是本产品的第 3 号差异化壁垒，桌面端作为已发布版本不应在其上开缺口。
+4. **验证能力没跟上扩端速度。** 鸿蒙端 0 测试，四端 instrumented/UI 测试全为 0，`build-harmony.yml` 依赖 self-hosted runner（实际大概率从未跑过）。
+
+**结论：六端格局已经铺完，v5.3.0 起停止扩端，转向「坐实已宣发能力 + 打通分水岭特性」。** 继续扩端的边际收益已低于把现有六端做深做实。
 
 ## 一、产品定位
 
-**面向 AI 重度使用者与开发者的移动端统一 Agent 控制台** — 把散落在多个客户端/网页里的 Agent 交互，收敛到一个手机入口，并提供跨 Agent 编排能力。
+**面向 AI 重度使用者与开发者的多端统一 Agent 控制台** — 把散落在多个客户端/网页里的 Agent 交互，收敛到一个统一入口，并提供跨 Agent 编排能力。
 
 ### 核心价值主张
 
-单一移动端入口统一操控异构 AI Agent（目前 8 种 AgentType：Hermes / OpenClaw / OpenCode / OpenAI 兼容 / OpenRouter / 小米 MiMo / Ollama/LM Studio 本地模型 / ComfyUI / OpenWebUI），并通过 DAG 工作流引擎实现跨 Agent 编排。
+单一入口统一操控异构 AI Agent（8 种 AgentType：Hermes / OpenClaw / OpenCode / OpenAI 兼容 / OpenRouter / 小米 MiMo / Ollama-LM Studio 本地模型 / ComfyUI / OpenWebUI），并通过 DAG 工作流引擎实现跨 Agent 编排。六端覆盖：**手机（Android / iOS / HarmonyOS）+ 桌面（Windows / macOS / Linux）**。
 
-### 差异化壁垒
+### 差异化壁垒（按当前真实强度排序）
 
-1. **双原生 + 共享协议层架构** — Android Kotlin/Compose + iOS Swift/SwiftUI 双端原生，通过 `protocol/` 统一契约，而非跨平台框架折中
-2. **8 种 AgentType 异构接入** — 覆盖云端 LLM、本地 LLM、文生图、OpenAI 兼容协议，单一 App 内完成跨类型协作
-3. **DAG 工作流引擎** — 多 Agent 编排能力，从"聊天工具"升级为"生产力平台"
-4. **E2E 端到端加密** — `AH1:` 传输加密 + `AKS:` 静态存储，PBKDF2 600000 轮，Android Keystore + iOS Keychain
-5. **端侧能力路线** — 规划本地推理（llama.cpp/MLX/MediaPipe），从"控制"走向"执行"
+| # | 壁垒 | 真实状态 |
+|:-:|------|---------|
+| 1 | **六端原生 + 共享协议层** | ✅ 最强，已坐实。六套原生代码共享 `protocol/` 单一契约，而非跨平台框架折中 |
+| 2 | **8 种 AgentType 异构接入** | ✅ 已坐实（桌面端 ComfyUI 除外） |
+| 3 | **E2E 端到端加密** | ✅ 已坐实（`AH1:` AES-256-GCM + PBKDF2 600000 轮，四端互操作） |
+| 4 | **DAG 工作流引擎** | ⚠️ 引擎可用，但**只有只读画布，无可视化编辑**——宣发价值未兑现 |
+| 5 | **端侧推理** | ❌ 未实现（v2.3.0 起就挂在规划里，三次延期） |
+
+> 壁垒 4 和 5 是「已投入叙事成本但未兑现」的两项，也是 v5.3–v5.5 的主要偿还对象。
 
 ## 二、目标用户
 
@@ -39,112 +69,158 @@
 - 痛点：现有 AI App 功能单一，无法组合多步骤任务
 - 特征：不关心 Agent 类型，只关心场景结果
 
-## 三、三条增长主线
+> **优先级判断**：泛化层需要「零配置 + 场景模板」，而这依赖可视化编排成熟后才能低成本生产模板。当前阶段不服务泛化层——先让核心层把编排用起来。
 
-### 主线 A：Agent 生态广度（横向）— 从 8 种到 N 种
+## 三、四条增长主线（重新锚定）
+
+### 主线 A：Agent 生态广度（横向）— 从 8 种到 N 种 ｜ **优先级：下调**
 
 ```
 现状: 8 种 AgentType，覆盖 LLM + 文生图
-缺口: 语音 Agent、RAG/知识库 Agent、MCP 工具服务器仅框架
+判断: 8 种已覆盖主流场景，继续加类型的边际收益低于做深已有类型
+下一步（仅保留一项高杠杆）:
+  - MCP 从"连接框架"升级为"工具市场"— 单个 AgentType 的能力边界由
+    挂载的 MCP server 决定，比新增 AgentType 的杠杆高一个量级
+  - 语音 Agent / RAG Agent：降级为 v6.0 之后再评估，不再占用 v5.x 预算
+```
+
+**战略意义修正**：Agent 类型数曾是核心护城河，但 8 种之后护城河来自「任意 Agent 的能力可扩展性」，即 MCP。主线 A 的重点从「自己加类型」变成「让用户加能力」。
+
+### 主线 B：编排能力深度（纵向）— 从 DAG 到可视化 ｜ **优先级：升为第一**
+
+```
+现状: WorkflowEngine 支持串行 DAG，4 节点类型，六端全是只读画布
+缺口: 无可视化编辑、无并行执行、桌面端引擎未移植
 下一步:
-  - 接入语音类 Agent（本地 Whisper + 云端 TTS）— 复用已有 VoiceChatScreen 骨架
-  - 把 MCP 从"连接框架"升级为"工具市场"— 用户可挂载任意 MCP server 作为 Agent 能力扩展
-  - 新增 RAG Agent 类型（接向量库）— 从"聊天"走向"知识工作"的关键
+  v5.3.0 - 桌面端移植协议层 + WorkflowEngine（无 UI，先跑通引擎与持久化）
+  v5.4.0 - 可视化拖拽编辑器（桌面优先，再回迁 Android）★ 分水岭
+  v5.5.0 - 并行分支执行 + 条件节点（if/else）
 ```
 
-**战略意义**：Agent 类型数是这类产品的核心护城河。每多一种类型，用户切换成本就高一档。
+**战略意义**：工作流是从"聊天工具"升级为"生产力平台"的分水岭。可视化编辑器是用户感知最强的差异化，且已连续三个版本被跳过——**再不做这项，产品叙事与产品现实会持续背离**。
 
-### 主线 B：编排能力深度（纵向）— 从 DAG 到可视化
+**为什么桌面优先**：DAG 编辑天然需要大屏 + 精确指针，移动端做拖拽连线体验受限；且桌面端是唯一能在 CI 中完整编译 + 跑 JVM 测试的一端（Android 需 SDK、iOS 需 macOS runner、Harmony 需 self-hosted runner）。桌面先落地后用近乎 1:1 的 Compose 代码回迁 Android，是风险最低的路径。
 
-```
-现状: WorkflowEngine 支持串行 DAG，4 节点类型，无可视化编辑器
-缺口: 无并行执行、无持久化历史、无拖拽编辑器、CollaborationManager 全 stub
-下一步:
-  v4.9.0 - Workflow 持久化 + 历史记录
-  v5.0.0 - 可视化拖拽编辑器（Canvas + 节点连线）
-  v5.1.0 - 并行分支执行 + 条件分支（if/else 节点）
-  v5.2.0 - 轻量协作（填平 iOS CollaborationManager stub）
-```
-
-**战略意义**：工作流是从"聊天工具"升级为"生产力平台"的分水岭。可视化编辑器是用户感知最强的差异化。
-
-### 主线 C：端侧能力（纵深）— 从控制到推理
+### 主线 C：端侧能力（纵深）— 从控制到推理 ｜ **优先级：保持 P1，但排在 B 之后**
 
 ```
 现状: LocalModel 仅发现端点，无端侧推理
-缺口: DEV_PLAN v2.3.0 P1 列了 llama.cpp/MLX/MediaPipe 但未实现
-下一步:
-  - iOS: 接入 MLX Swift（Apple Silicon 优化，iPhone 可跑 4B 量化模型）
-  - Android: 接入 MediaPipe LLM Inference API（官方支持，兼容性好）
-  - 统一为"LocalModel v2"— 从"转发请求到本地服务"升级为"App 内直接推理"
+缺口: llama.cpp/MLX/MediaPipe 三次规划、三次延期
+判断: 工程量大 + 模型分发是独立难题，必须先有稳定编排基座再叠加
+下一步（v5.5.0 起）:
+  - iOS: MLX Swift（Apple Silicon 优化，4B 量化）
+  - Android: MediaPipe LLM Inference API
+  - 统一为 "LocalModel v2"，模型动态下载，包内仅含推理引擎
 ```
 
-**战略意义**：端侧推理是隐私 + 离线场景的杀手锏，也是与云端 AI 客户端的本质差异。工程量大，作为 v5.0+ 重点。
+### 主线 D：可信度与验证能力（新增） ｜ **优先级：P0（v5.3.0）**
+
+> 这是本次重新锚定新增的一条。六端架构下，「验证能力」本身已成为主要瓶颈。
+
+```
+现状:
+  - 鸿蒙端 0 测试；四端 instrumented/UI 测试全为 0
+  - build-harmony.yml 依赖 self-hosted runner，实际未验证
+  - TLS pin 为空（安全宣发与实现不符）
+  - 鸿蒙 3 个 feature HSP 已开发但未接线（功能对用户不可达）
+  - 无协议一致性 CI（docs/product-strategy v4.8 就提了，未做）
+判断:
+  六端共享协议是本项目最大的架构赌注，而目前没有任何自动化手段
+  阻止协议漂移。"已实现"与"已验证"的差距正在累积成系统性风险。
+下一步（v5.3.0 P0）:
+  - 证书锁定填真实 pin（Android + iOS）
+  - 鸿蒙 workflow/mcp/compare 接入主壳导航（或明确降级）
+  - 鸿蒙端测试从 0 起步（WorkflowEngine + Transport 优先）
+  - check-protocol-sync 脚本：比对 protocol/schemas 与六端模型字段
+  - 版本同步脚本补齐 desktop + package.json 覆盖
+```
 
 ## 四、版本路线图
 
-### v4.9.0 — 编排深化（P0：补高价值缺口）
+### v5.3.0 — 可信化：把已宣发的能力坐实（当前 Sprint）
+
+> 主题：**停止扩端，偿还叙事债。** 不新增端、不新增 AgentType。
 
 | 优先级 | 项目 | 理由 |
 |--------|------|------|
-| **P0** | Workflow 持久化 + 执行历史 | 当前执行完即丢，无法复用，是"可用"到"好用"的关键 |
-| **P0** | 填平 iOS CollaborationManager stub | 双端功能对齐是产品承诺 |
-| **P1** | 证书锁定填真实 pin | 框架已建，pin 为空=形同虚设，安全是差异化卖点 |
-| **P1** | Marketplace 从只读升级为可订阅 | 加"收藏/订阅更新"提升留存 |
-| **P2** | 文档大扫除 | architecture.md 仍写 v2.1.3，DEV_PLAN Sprint 标 v2.2.0 |
+| **P0** | 证书锁定填真实 pin（Android + iOS） | 空 pin 让安全宣发形同虚设，是"说了没做"最典型的一处 |
+| **P0** | 鸿蒙 workflow/mcp/compare 接入主壳导航 | 已开发却不可达，比"未开发"更糟 |
+| **P0** | 文档体系对齐（本次交付） | 三份文档停更在 v4.8.0，与 v5.2.0 六端现实脱节；期间还整体跳过了 v4.9.0 与 v5.0.0 |
+| **P0** | 桌面端 API Key 静态加密（`AKS:`） | 明文落盘与自有 `SECURITY.md` §4 冲突；安全性是差异化壁垒，已发布版本不应开此缺口 |
+| **P0** | 版本与协议漂移防护 | 根 `package.json` 已漂移至 4.8.0 且无校验覆盖；`desktop/build.gradle.kts` 同样在覆盖盲区 |
+| **P1** | 桌面端 Workflow 协议层 + 引擎移植 | 为 v5.4 可视化编辑器铺路，先无 UI |
+| **P1** | 鸿蒙端测试从 0 起步 | 唯一零测试端，CI 又依赖 self-hosted runner，风险最高 |
+| **P2** | 清理 iOS WorkflowEngine 陈旧注释 | 注释称 `AgentConfigDao` 未实现，实际已接线 `DataController`（见 `architecture.md` §9.1）——注释与实现背离会持续误导后续审计 |
+| **P2** | `check-protocol-sync.sh` | 六端共享协议是最大架构赌注，目前无任何自动化手段阻止漂移 |
 
-### v5.0.0 — 编排可视化 + 端侧推理 MVP
+详见 [`DEV_PLAN.md`](../DEV_PLAN.md) Sprint 16 的任务级分解。
+
+### v5.4.0 — 分水岭：Workflow 可视化拖拽编辑器
 
 | 优先级 | 项目 | 理由 |
 |--------|------|------|
-| **P0** | Workflow 可视化拖拽编辑器 | 用户感知最强的差异化，分水岭特性 |
-| **P1** | 端侧推理 MVP（Android MediaPipe + iOS MLX） | 隐私 + 离线杀手锏 |
-| **P2** | RAG Agent 类型（接向量库） | 从"聊天"走向"知识工作" |
+| **P0** | 桌面端 DAG 可视化编辑器 | Canvas + 节点拖拽 + 端口连线 + 属性面板 + 执行态实时高亮 + 运行历史 |
+| **P0** | 回迁 Android（Compose 代码近乎 1:1） | 移动端主端补齐，兑现自 v4.8.0 策略起就定为 P0「分水岭特性」的能力 |
+| **P1** | 工作流模板市场（导入/导出 JSON） | 让模板成为可分享资产，为泛化层铺路 |
+| **P2** | iOS / 鸿蒙保持只读画布 | 移动端编辑体验受限，暂不投入 |
 
-### v5.1.0+ — 生态扩展
+### v5.5.0 — 端侧推理 MVP + MCP 工具市场
+
+| 优先级 | 项目 | 理由 |
+|--------|------|------|
+| **P1** | 端侧推理 MVP（Android MediaPipe / iOS MLX） | 隐私 + 离线杀手锏，依赖 v5.4 的编排基座 |
+| **P1** | MCP 工具市场 | 把 MCP 从连接框架升级为能力扩展机制，主线 A 的唯一高杠杆项 |
+| **P2** | 桌面端路线图收尾（ComfyUI / Markdown 渲染 / 开机自启 / 通知 / ja-ko） | 桌面端补齐型工作 |
+
+### v6.0.0+ — 编排完整化与生态
 
 | 优先级 | 项目 | 理由 |
 |--------|------|------|
 | **P1** | Workflow 并行分支 + 条件节点 | 编排能力完整化 |
-| **P1** | MCP 工具市场 | Agent 能力扩展机制 |
 | **P2** | 轻量团队协作 | 从个人工具走向团队工具 |
-| **P2** | 语音 Agent | 复用 VoiceChatScreen 骨架 |
+| **P2** | 语音 Agent | 复用已有语音输入骨架（本地 Whisper + 云端 TTS） |
+| **P2** | RAG Agent 类型（接向量库） | 从"聊天"走向"知识工作" |
+| **P3** | 跨端同步 | 依赖 iOS DeviceSyncManager 填平 MultipeerConnectivity |
 
 ## 五、工程化策略
 
 ### 1. 用户研究
-- 补齐 `docs/personas.md`，定义 2-3 个核心 persona
-- 后续功能优先级用 persona 痛点驱动，而非技术债驱动
+- `docs/personas.md` 已存在，但**未驱动过任何一次优先级决策**（v5.x 四次发版全部是扩端）
+- 要求：v5.4 可视化编辑器的交互设计必须回溯 persona 痛点，而非技术债驱动
 
-### 2. 测试策略
-- 当前 Android 16 测试文件、iOS 13 文件，ViewModel 层几乎无测试
-- 优先给 ChatViewModel / AgentsViewModel / WorkflowViewModel 补关键路径测试
-- 引入 instrumented 测试（UI Automator / XCUITest）— 当前完全空白
+### 2. 测试策略（现状 → 目标）
 
-### 3. 协议一致性 CI
-- 现有 `check-version-sync.sh` 解决版本号漂移
-- 新增 `check-protocol-sync.sh`：对比 `protocol/schemas/*.json` 与双端 model 定义的字段一致性
-- 双原生架构最大的长期风险，值得 CI 卡死
+| 端 | 现状 | v5.3 目标 |
+|----|------|----------|
+| Android | 20 测试文件（含 1 instrumented DAO 测试） | 维持 + 补 Workflow 可视化用例 |
+| iOS | 13 测试文件 | 补 WorkflowEngine 真实配置用例 |
+| HarmonyOS | **0** | ≥ 5 用例（WorkflowEngine / Transport） |
+| Desktop | 3 文件 / 23 用例 | ≥ 40 用例（含 Workflow 引擎与图变更） |
+| Instrumented / UI | 四端全 0 | 至少 Android 或 Desktop 起一条 |
+
+### 3. 协议一致性 CI（欠账最久的一项）
+- 现有 `scripts/check-version-sync.sh` 只解决版本号漂移，且**未覆盖 desktop 与根 `package.json`**（后者已漂移至 4.8.0）
+- 新增 `scripts/check-protocol-sync.sh`：比对 `protocol/schemas/*.json` 与各端模型定义的字段集合
+- 六端共享协议是最大架构赌注，值得 CI 卡死
 
 ### 4. detekt baseline 收敛
-- 当前 367 个存量违规被 baseline 接受，掩盖质量信号
-- 每版本清理 20-30 个，半年内清空
-- 优先清理 LongMethod / CyclomaticComplexity（可读性债）
+- 367 个存量违规被 baseline 接受，掩盖质量信号
+- 每版本清理 20–30 个，优先 `LongMethod` / `CyclomaticComplexity`
 
 ### 5. 发布节奏
-- 改为双周发布：奇数周发 patch（hotfix + 小改进），偶数周发 minor（新功能）
-- 配合 FeatureFlag，主功能可暗发布到 main，tag 时再点亮
+- 双周发布：奇数周 patch（hotfix + 小改进），偶数周 minor（新功能）
+- **v5.3.0 例外**：作为「可信化」版本，只做偿还，不引入新叙事
 
 ## 六、商业化路径（可选）
 
 | 阶段 | 模式 | 触发条件 |
 |------|------|---------|
 | 现在 | 完全免费开源 | 个人项目，积累口碑 |
-| v5.0 后 | freemium | 本地推理/基础工作流免费；云端同步、团队协作、高级 Marketplace 为 Pro |
+| v5.4 后 | freemium | 可视化编辑器 + 基础工作流免费；云端同步、团队协作、高级模板为 Pro |
 | 端侧推理上线后 | Pro 订阅 | 端侧模型下载、高性能推理引擎为付费特性 |
 
-**原则**：不过早商业化。先用 v5.0 的可视化工作流 + 端侧推理建立差异化壁垒，再谈付费。
+**原则**：不过早商业化。先用 v5.4 的可视化工作流建立差异化壁垒，再谈付费。
 
 ## 七、一句话总结
 
-**技术基建已经扎实（双原生 + 协议层 + 安全 + 8 种 Agent），下一步重心应从"扩 Agent 类型"转向"编排深度 + 用户研究 + 工程化收敛"，用 Workflow 可视化编辑器和端侧推理建立真正的产品差异化。**
+**六端格局已在 v5.2.0 铺完，代价是分水岭特性（可视化编排）连续三个版本被跳过、已宣发能力出现空洞、验证能力没跟上。v5.3.0 起停止扩端：先坐实（pin / iOS 引擎 / 鸿蒙接线 / 测试），再于 v5.4.0 打通可视化编排这个真正的分水岭。**
