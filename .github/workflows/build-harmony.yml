@@ -48,7 +48,7 @@ jobs:
       HVIGOR_PRODUCT: "default"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up JDK 21
         # commandline-tools 26.0.0 Beta2+ 推荐 JDK 21；JDK 17 亦可（较低版本工具链）。
@@ -168,7 +168,7 @@ jobs:
       HVIGOR_PRODUCT: "default"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
