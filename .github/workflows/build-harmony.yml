@@ -52,7 +52,7 @@ jobs:
 
       - name: Set up JDK 21
         # commandline-tools 26.0.0 Beta2+ 推荐 JDK 21；JDK 17 亦可（较低版本工具链）。
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
@@ -171,7 +171,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
