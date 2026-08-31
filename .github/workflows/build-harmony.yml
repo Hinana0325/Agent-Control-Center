@@ -59,7 +59,7 @@ jobs:
 
       - name: Set up Node.js 20
         # hvigor 基于 Node.js 运行，鸿蒙工具链内置 Node 18，这里用 20 LTS 兼容。
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '20'
 
@@ -177,7 +177,7 @@ jobs:
           java-version: '21'
 
       - name: Set up Node.js 20
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '20'
 
