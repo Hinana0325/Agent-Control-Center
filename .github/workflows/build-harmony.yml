@@ -123,7 +123,7 @@ jobs:
 
       - name: Upload debug HAP artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: harmony-debug-hap
           path: harmony/${{ steps.hap.outputs.hap_dir }}/*.hap
@@ -131,7 +131,7 @@ jobs:
 
       - name: Upload build log on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: harmony-build-logs
           path: harmony/build-debug.log
@@ -229,7 +229,7 @@ jobs:
           ls -la "$HAP_DIR"/*.hap
 
       - name: Upload release HAP artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-hap
           path: harmony/${{ steps.hap.outputs.hap_dir }}/*.hap
