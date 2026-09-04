@@ -149,7 +149,11 @@ class CredentialVaultTest {
         val keyFile = File(tmp, "master.key")
         vault.encrypt("warm-up") // 触发主密钥生成
         val corrupted = "not-valid-base64-!!!"
-        keyFile.writeText(corrupted)
+        // Windows：CredentialVault 生成密钥后设 dos:hidden，而 File.writeText
+        // 底层 FileOutputStream 打开隐藏文件直接拒绝访问（本机与 windows-latest
+        // CI 均复现，v5.3.0 起 desktop Windows 矩阵一直红）。NIO
+        // Files.writeString 会携带既有属性打开，可正常覆写。
+        Files.writeString(keyFile.toPath(), corrupted)
 
         val fresh = CredentialVault(tmp)
         assertFailsWith<CredentialVaultException> { fresh.encrypt("anything") }
