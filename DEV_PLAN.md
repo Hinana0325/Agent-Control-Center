@@ -17,10 +17,10 @@
 | 版本 | v5.3.0（versionCode 45，单一事实来源 `version.properties`） |
 | 架构 | 六端原生，共享 `protocol/` 永久统一协议层 |
 | 协议层 | 11 JSON Schema + 5 传输协议文档 |
-| 代码规模 | Android 261 / Harmony 139 / iOS 114 / Desktop 35 文件 |
-| 测试 | Android 20 文件 · iOS 13 文件 · Desktop 4 文件（40 用例）· **Harmony 0** |
+| 代码规模 | Android 261 / Harmony 139 / iOS 114 / Desktop 40 文件 |
+| 测试 | Android 20 文件 · iOS 13 文件 · Desktop 6 文件（72 用例）· **Harmony 0** |
 | Instrumented / UI 测试 | **四端全 0** |
-| 已知 P0 问题 | 16.2 鸿蒙接线未做；16.1 代码侧已完成、**真实 pin 待可信网络填入**；16.3、16.4、16.9 已完成 |
+| 已知 P0 问题 | 16.2 鸿蒙接线未做；16.1 代码侧已完成、**真实 pin 待可信网络填入**；16.3、16.4、16.5、16.9 已完成 |
 
 ### 六端能力矩阵（审计口径，非 README 功能列表）
 
@@ -28,15 +28,15 @@
 |------|:-------:|:---:|:-------:|:-------:|
 | 8 AgentType 连接 | ✅ | ✅ | ✅ | ⚠️ ComfyUI 降级 |
 | 流式聊天 | ✅ | ✅ | ✅ | ✅ |
-| WorkflowEngine | ✅ | ✅ | ✅ | ❌ 未移植 |
-| Workflow 运行历史 | ✅ | ✅ | ✅ | ❌ 未移植 |
+| WorkflowEngine | ✅ | ✅ | ✅ | ✅（16.5 移植，引擎无 UI 入口） |
+| Workflow 运行历史 | ✅ | ✅ | ✅ | ✅（16.5，`workflow-runs.json`） |
 | **Workflow 可视化编辑** | ❌ 只读 | ❌ 只读 | ❌ 只读 | ❌ 未移植 |
 | MCP / 插件 | ✅ | ✅ | ✅ | ❌ |
 | E2E 加密 `AH1:` | ✅ | ✅ | ✅ | ✅ |
 | 静态存储加密 `AKS:` | ✅ | ✅ | ✅ | ✅（v5.3.0 起，原明文） |
 | 证书锁定 | ⚠️ 接线完整·pin 为空 | ⚠️ 接线完整·pin 为空 | ❌ | ❌ |
 | 证书锁定开关 | ❌ **未实现** | ❌ **未实现** | ❌ | ❌ |
-| 单元测试 | 20 文件 | 13 文件 | **0** | 40 用例 |
+| 单元测试 | 20 文件 | 13 文件 | **0** | 72 用例 |
 
 > **「接线完整·pin 为空」的含义**：双端均已实现完整的 pinning 链路（Android
 > `TransportFactory` 动态启用 + OkHttp `CertificatePinner`；iOS 三处 transport 注入
@@ -59,13 +59,13 @@
 | 16.2 | P0 | 鸿蒙 3 个 feature 接入主壳导航 | `harmony/entry/src/main/ets/pages/Index.ets` | `workflow` / `mcp` / `compare` 可从主壳到达；`oh-package.json5` 依赖与实际导入一致，无未使用依赖 |
 | 16.3 | P0 | **文档体系对齐（已完成）** | `DEV_PLAN.md`<br>`docs/product-strategy.md`<br>`docs/architecture.md` | 三份文档锚定 v5.2.0 六端现实；技术栈版本与构建文件逐项核对一致 |
 | 16.4 | P0 | 版本漂移防护补全（已完成） | `scripts/check-version-sync.sh`<br>`package.json`（根）<br>`desktop/build.gradle.kts` | 脚本覆盖 `desktop` + `package.json`；根 `package.json` 从漂移的 4.8.0 修正为 5.2.0；注入错误版本时脚本退出码 1 |
-| 16.5 | P1 | 桌面端 Workflow 协议层 + 引擎移植 | `desktop/src/main/kotlin/.../runtime/workflow/WorkflowEngine.kt`<br>`.../data/model/Workflow.kt`<br>`.../data/persistence/JsonStore.kt` | 按 `protocol/schemas/workflow-schema.json` 逐字段移植；拓扑排序 + 环检测 + 8 种变换与 Android 行为一致；新增 JVM 单测 ≥ 10 例 |
+| 16.5 | P1 | **桌面端 Workflow 协议层 + 引擎移植（已完成）** | `desktop/src/main/kotlin/.../runtime/workflow/WorkflowEngine.kt`<br>`.../data/model/Workflow.kt`<br>`.../data/persistence/JsonStore.kt` | ✅ 按 `protocol/schemas/workflow-schema.json` 逐字段移植；拓扑排序 + 环检测 + 8 种变换与 Android 行为一致；新增 JVM 单测 32 例（40 → 72），本地 `gradlew test` 三次全绿；附带修复 v5.3.0 遗留的 Windows CI 红（`CredentialVaultTest` 隐藏文件覆写，见 CHANGELOG Unreleased） |
 | 16.6 | P1 | 鸿蒙端测试从 0 起步 | `harmony/common/src/test/`（新建） | ≥ 5 用例，优先 `WorkflowEngine.ets` 与 `OpenAIHttpTransport.ets`；CI 可跑 |
 | 16.7 | P2 | 清理 iOS WorkflowEngine 陈旧注释 | `ios/.../Runtime/WorkflowEngine.swift:46,375` | 注释与实际行为一致（C9 修复后已通过 `DataController` 查真实配置），避免后续审计误判 |
 | 16.8 | P2 | 新增协议一致性校验脚本 | `scripts/check-protocol-sync.sh`（新建） | 比对 `protocol/schemas/*.json` 与四端模型字段集合；漂移时 CI 失败 |
 | 16.9 | P0 | **桌面端 API Key 静态加密（已完成）** | `desktop/.../core/security/CredentialVault.kt`（新增）<br>`desktop/.../app/AppStore.kt` | ✅ 落盘前加密 `apiKey`（`AKS:` 前缀，对齐 `SECURITY.md` §4.1）；读取时解密；启动一次性迁移历史明文；17 个新用例全绿（桌面端 23 → 40） |
 
-### 已完成（16.1 代码侧、16.3、16.4、16.9）
+### 已完成（16.1 代码侧、16.3、16.4、16.5、16.9）
 
 - **16.1 证书锁定（部分完成——代码侧缺陷已修复，真实 pin 待填入）**：
 
@@ -89,6 +89,10 @@
   主密钥为 `~/.agent-control-center/master.key`（256 位随机，POSIX 600）。**纯 JVM 下无跨平台硬件密钥库**（DPAPI/Keychain/libsecret 均需 JNI），故强度低于移动端 TEE/Keychain：可防「文件被拷走后离线破解」，防不住「同用户身份的恶意进程」。已在 `SECURITY.md` §4.4 记录完整威胁模型，不以「已加密」四字掩盖强度差异。
 
   设计取舍：密钥文件损坏时抛 `CredentialVaultException` 而**不静默重新生成密钥**——静默重生成会让既有凭据永久不可解密。宁可失败可见，不可静默丢数据（用例 `密钥文件损坏时抛异常且不静默重生成` 锁定此行为）。
+
+- **16.5 桌面端 Workflow 协议层 + 引擎移植**：新增 `data/model/Workflow.kt`（schema 逐字段模型）、`runtime/workflow/WorkflowEngine.kt`（BFS 拓扑执行 + 环检测 + 60s 超时 + delta/整帧两态事件收集）、`runtime/workflow/WorkflowTemplates.kt`（4 模板与 Android 逐字段一致）；`JsonStore` 扩展 `workflow-runs.json` 持久化（对应 Android Room 表 `workflow_runs`）。执行语义与 Android 逐行为对齐，差异仅三处且均有据：无 Hilt（构造注入，`TransportFactory` 改 open 供测试替身）、无 FeatureFlagManager（桌面端无此层）、CANCELLED 终态在 `NonCancellable` 中落盘（外层协程已取消时普通 suspend 会立刻再抛取消异常，历史会残留 RUNNING 死记录）。新增 32 用例（`WorkflowModelTest` 10 + `WorkflowEngineTest` 22），桌面端 40 → 72，本地 `gradlew test` 全绿。**注意：引擎尚未接 UI**——桌面端目前无 Workflow 页面，此项为 Sprint 17 可视化编辑器的基座（与依赖图一致）。
+
+- **附带修复：v5.3.0 起 desktop Windows CI 矩阵一直红**：`CredentialVault` 生成 `master.key` 后设 `dos:hidden`，Kotlin `File.writeText` 底层 `FileOutputStream` 打开隐藏文件被 Windows 拒绝访问（`CreateFile` 未携带 `FILE_ATTRIBUTE_HIDDEN` → `ERROR_ACCESS_DENIED`），`CredentialVaultTest` 的密钥损坏用例因此必现失败。本地 Windows 11 复现并与 main 的 `windows-latest — test & package` 失败互证（jshell 双探针定位：NIO 写入正常、`FileOutputStream` 拒绝）。修复：该用例改用 NIO `Files.writeString`。生产代码不受影响（`master.key` 只在不存在时写一次）。另注：CI 的注解步骤用 `python3`，windows runner 无此命令，失败时注解不产出——测试转绿后该步骤被 `if: failure()` 跳过，不阻塞，留待后续修。
 
 ### 审计中修正的误判（记录以防复发）
 
@@ -151,12 +155,11 @@ Sprint 16 — v5.3.0 可信化
   ├──► 16.1 证书锁定        ┐
   ├──► 16.2 鸿蒙接线        │ 互不依赖，可并行
   ├──► 16.3 文档对齐   ✅   │
-  └──► 16.4 版本防护   ✅   ┘
+  ├──► 16.4 版本防护   ✅   │
+  └──► 16.5 桌面引擎   ✅   ┘
   │
-  ├──► 16.5 桌面端 Workflow 引擎移植 ──┐
-  │                                    │
-  ▼                                    ▼
-Sprint 17 — v5.4.0 分水岭（依赖 16.5 的引擎基座）
+  ▼
+Sprint 17 — v5.4.0 分水岭（16.5 引擎基座已就绪）
   │
   ▼
 Sprint 18 — v5.5.0 端侧推理 + MCP 市场（依赖 17 的编排基座）

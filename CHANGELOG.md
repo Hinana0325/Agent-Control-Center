@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — 桌面端 Workflow 协议层 + 引擎移植（任务 16.5，Sprint 16 P1）
+
+四端能力矩阵中桌面端的 `WorkflowEngine` 与 `Workflow 运行历史` 两项从 ❌ 补齐为 ✅。此前桌面端只能聊天，无法编排 Agent 链路；这是 Sprint 17（v5.4.0 可视化拖拽编辑器）的引擎基座。
+
+#### Added
+
+- **`data/model/Workflow.kt`**：按 `protocol/schemas/workflow-schema.json` 逐字段移植的数据模型（NodeType / TransformType / WorkflowNode / WorkflowEdge / Workflow / WorkflowExecutionState / WorkflowRunStatus / WorkflowRunRecord），kotlinx-serialization 字段名即 JSON key，schema 形状的 JSON 可无损解码。与 Android 的差异仅在 `WorkflowRunRecord` 的日志字段——Android 受 Room 限制存 `logsJson` 字符串，桌面端直接存原生 `List<String>`，与 schema 契约一致。
+- **`runtime/workflow/WorkflowEngine.kt`**：自 Android 同名引擎移植，执行语义逐行为对齐——INPUT 起点的 BFS 拓扑执行、前驱未完成重新入队（超 100 次判环，6003 场景）、多前驱输出以空行拼接、AGENT 节点 `{input}` 占位符替换、单次 AGENT 调用 60 秒超时（6002 场景）、delta/整帧两态事件收集（Android M-16 同源）、节点级失败返回错误串不中断整链。
+  - 桌面形态差异：无 Hilt（构造注入，`TransportFactory` 改为 open 供测试替身）、无 FeatureFlagManager、历史记录经 `JsonStore` 落 `workflow-runs.json`（对应 Android Room 表 `workflow_runs`）。
+  - 取消语义：`CancellationException` 传播且在 `NonCancellable` 中落 `CANCELLED` 终态——外层协程已取消时普通 suspend 调用会立刻再抛取消异常，不如此历史里会残留 RUNNING 死记录。
+- **`runtime/workflow/WorkflowTemplates.kt`**：4 个预置模板（Translation Chain / Code Review / Research Assistant / Image Generation）与 Android 逐字段一致（节点 id / prompt / 坐标 / 边结构），保证六端模板可互换。
+- **`JsonStore` 扩展**：`loadWorkflowRuns`（倒序 + 按 workflowId 过滤 + limit）/ `insertWorkflowRun` / `updateWorkflowRun`，复用既有原子写入与 Mutex 串行化。
+- **32 个新用例**（`WorkflowModelTest` 10 + `WorkflowEngineTest` 22）：schema 解码往返、8 种变换全覆盖、多前驱拼接、环检测、无 INPUT 节点、AGENT 无配置/占位符/事件流三态/空响应、执行历史落盘与排序、取消传播且记 CANCELLED。含脚本化假传输（`ScriptedTransport`）验证事件收集语义。桌面端测试 40 → 72。
+
+### Fixed — CredentialVaultTest 在 Windows 上确定性失败（v5.3.0 遗留，main 的 windows-latest 矩阵红）
+
+#### Fixed
+
+- **`CredentialVaultTest` 密钥损坏用例**：`CredentialVault` 生成 `master.key` 后设置 `dos:hidden`（Windows 附加防护），而 Kotlin `File.writeText` 底层 `FileOutputStream` **打开隐藏文件直接拒绝访问**（`CreateFile` 未携带 `FILE_ATTRIBUTE_HIDDEN` 时 Windows 返回 `ERROR_ACCESS_DENIED`）。该用例模拟密钥损坏需覆写此文件，故在 Windows 上必现失败——本地 Windows 11 与 `windows-latest` CI 均复现，即 v5.3.0 起 desktop Windows 矩阵一直红的原因。修复：改用 NIO `Files.writeString`（打开时携带既有文件属性，可正常覆写）。生产路径不受影响（`master.key` 只在不存在时写一次，无覆写路径）。
+
 ## [5.3.0] - 2026-08-29
 
 ### 文档 — v5.3.0「可信化」规划重新锚定（Sprint 16.3 / 16.4）

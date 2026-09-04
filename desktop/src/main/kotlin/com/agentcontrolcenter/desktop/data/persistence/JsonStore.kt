@@ -3,6 +3,7 @@ package com.agentcontrolcenter.desktop.data.persistence
 import com.agentcontrolcenter.desktop.agent.model.AgentConfig
 import com.agentcontrolcenter.desktop.data.model.Message
 import com.agentcontrolcenter.desktop.data.model.Session
+import com.agentcontrolcenter.desktop.data.model.WorkflowRunRecord
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -20,6 +21,7 @@ import java.io.File
  * agents.json                       — List<AgentConfig>
  * sessions.json                      — List<Session>
  * messages/<sessionId>.json          — List<Message>
+ * workflow-runs.json                 — List<WorkflowRunRecord>（Sprint 16.5）
  * ```
  *
  * 设计取舍：
@@ -40,6 +42,7 @@ class JsonStore(
     private val settingsFile = File(rootDir, "settings.json")
     private val agentsFile = File(rootDir, "agents.json")
     private val sessionsFile = File(rootDir, "sessions.json")
+    private val workflowRunsFile = File(rootDir, "workflow-runs.json")
 
     init {
         rootDir.mkdirs()
@@ -98,6 +101,42 @@ class JsonStore(
 
     private fun messagesFileFor(sessionId: String): File =
         File(messagesDir, "$sessionId.json")
+
+    // MARK: - Workflow runs（Sprint 16.5，对应 Android Room 表 workflow_runs）
+
+    /** 按开始时间倒序返回执行历史；[workflowId] 非空时只返回该工作流的记录。 */
+    fun loadWorkflowRuns(workflowId: String? = null, limit: Int = 50): List<WorkflowRunRecord> {
+        val all = readJsonList<WorkflowRunRecord>(workflowRunsFile) ?: emptyList()
+        return all
+            .filter { workflowId == null || it.workflowId == workflowId }
+            .sortedByDescending { it.startedAt }
+            .take(limit)
+    }
+
+    /** 新增一条执行记录（引擎执行开始时写入 RUNNING 态）。 */
+    suspend fun insertWorkflowRun(record: WorkflowRunRecord) {
+        mutex.withLock {
+            withContext(Dispatchers.IO) {
+                val list = readJsonList<WorkflowRunRecord>(workflowRunsFile)?.toMutableList()
+                    ?: mutableListOf()
+                list.add(record)
+                writeJsonLocked(workflowRunsFile, list)
+            }
+        }
+    }
+
+    /** 按 id 替换记录（RUNNING → COMPLETED / FAILED / CANCELLED）；不存在则追加。 */
+    suspend fun updateWorkflowRun(record: WorkflowRunRecord) {
+        mutex.withLock {
+            withContext(Dispatchers.IO) {
+                val list = readJsonList<WorkflowRunRecord>(workflowRunsFile)?.toMutableList()
+                    ?: mutableListOf()
+                val idx = list.indexOfFirst { it.id == record.id }
+                if (idx >= 0) list[idx] = record else list.add(record)
+                writeJsonLocked(workflowRunsFile, list)
+            }
+        }
+    }
 
     // MARK: - IO helpers
 

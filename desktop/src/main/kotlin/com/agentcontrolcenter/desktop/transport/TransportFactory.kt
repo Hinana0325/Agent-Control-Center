@@ -26,10 +26,13 @@ import kotlinx.coroutines.launch
  * - OpenAI / XiaomiMiMo / LocalModel / OpenWebUI → [OpenAIHttpTransport]（HTTP + SSE）
  * - ComfyUI → [UnsupportedTransport]（桌面 v1 未移植图像生成工作流，
  *   优雅降级为连接时错误事件，见 docs/desktop-*.md 路线图）
+ *
+ * open 供测试替身覆写（桌面端无 Hilt，Android 经 Mockito 达成的注入
+ * 在此处以继承实现，WorkflowEngine 的 JVM 测试依赖此能力）。
  */
-class TransportFactory {
+open class TransportFactory {
 
-    fun create(type: AgentType): AgentTransport = when (type) {
+    open fun create(type: AgentType): AgentTransport = when (type) {
         AgentType.Hermes,
         AgentType.OpenClaw,
         AgentType.OpenCode -> WebSocketTransport()

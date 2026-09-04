@@ -10,8 +10,9 @@
 - **E2E 加密**：`AH1:` 格式（AES-256-GCM + PBKDF2 600000 轮），与 Android/iOS 端互操作；设置页热更新口令
 - **静态凭据加密**：`AKS:` 格式（AES-256-GCM + 随机 IV），API Key 落盘前加密、载入时解密；内存态保持明文供传输层建连使用。v5.2.0 及更早的明文历史数据在启动时自动迁移
 - **SSRF 防护**：`UrlValidator`（云 metadata/保留地址段/危险 scheme 拦截，本地端点放行）
+- **Workflow 引擎**：`WorkflowEngine` + 4 预置模板（Translation Chain / Code Review / Research Assistant / Image Generation），按 `protocol/schemas/workflow-schema.json` 与 Android 逐行为对齐（BFS 拓扑执行 / 环检测 / 8 种变换 / 60s 超时 / `{input}` 占位符）；执行历史落 `workflow-runs.json`。引擎与历史 API 就绪，UI 入口为 Sprint 17 可视化编辑器
 - **系统托盘**：close-to-tray、Show/Quit 菜单
-- **持久化**：`~/.agent-control-center/` JSON 文件存储（agents/sessions/messages/settings + master.key），临时文件 + 原子重命名写入
+- **持久化**：`~/.agent-control-center/` JSON 文件存储（agents/sessions/messages/settings/workflow-runs + master.key），临时文件 + 原子重命名写入
 - **双语**：英语 / 简体中文
 
 ## 构建与运行
@@ -20,7 +21,7 @@
 # 开发运行（当前平台）
 ./gradlew run
 
-# 单元测试（40 个 JVM 测试：协议契约/安全/持久化/凭据保险库）
+# 单元测试（72 个 JVM 测试：协议契约/安全/持久化/凭据保险库/工作流模型与引擎）
 ./gradlew test
 
 # 安装包：Windows→msi / macOS→dmg / Linux→deb
@@ -37,8 +38,9 @@ com.agentcontrolcenter.desktop/
 ├── core/error/           # AppErrorCode（37 错误码，与三端对齐）
 ├── core/security/        # UrlValidator（SSRF 防护）+ CryptoManager（E2E AH1:）
 │                         # + CredentialVault（静态 AKS:，主密钥 master.key）
-├── data/model/           # Message/Session
+├── data/model/           # Message/Session/Workflow（schema 对齐模型）
 ├── data/persistence/     # JsonStore（JSON 文件存储 + AppSettings）
+├── runtime/workflow/     # WorkflowEngine + WorkflowTemplates（16.5 移植）
 ├── transport/
 │   ├── protocol/         # AgentTransport 契约 + AgentEvent
 │   ├── websocket/        # WebSocketTransport
@@ -60,6 +62,7 @@ com.agentcontrolcenter.desktop/
 
 ## 路线图
 
+- [ ] Workflow 可视化编辑器（Sprint 17 / v5.4.0：Canvas 节点拖拽 + 端口连线 + 属性面板 + 执行态高亮；引擎与运行历史基座已就绪）
 - [ ] ComfyUI 文生图传输（ComfyApiClient + 工作流提交 + 图片渲染）
 - [ ] Markdown 渲染（移动端 ChatMarkdown 对齐）
 - [ ] 开机自启动（Windows 注册表 / macOS LoginItems / Linux .desktop）
